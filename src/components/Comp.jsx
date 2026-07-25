@@ -31,7 +31,6 @@ export default function Comp({ searchText }) {
   const debouncedSearch = useDebounce(searchText, 400);
   const isMounted = useRef(true);
 
-  // Reset and fetch from page 1 whenever search or category changes
   useEffect(() => {
     isMounted.current = true;
     setPlants([]);
@@ -55,19 +54,12 @@ export default function Comp({ searchText }) {
       if (!isMounted.current) return;
 
       const newPlants = data.plants || [];
-
-      if (isReset) {
-        setPlants(newPlants);
-      } else {
-        setPlants((prev) => [...prev, ...newPlants]);
-      }
-
+      setPlants((prev) => isReset ? newPlants : [...prev, ...newPlants]);
       setTotalCount(data.total || null);
       setHasMore(pageNum < (data.lastPage || 1));
       setUsingFallback(false);
     } catch {
       if (!isMounted.current) return;
-      // Fallback to local data
       if (isReset) {
         const filtered = dataPlant.filter((p) =>
           p.title.toLowerCase().includes(debouncedSearch.toLowerCase())
@@ -83,7 +75,7 @@ export default function Comp({ searchText }) {
         setLoadingMore(false);
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
   const handleLoadMore = () => {
@@ -92,7 +84,7 @@ export default function Comp({ searchText }) {
     fetchPlants(nextPage, false);
   };
 
-  // Client-side category filter (Perenual's API returns cycle, so we map locally for category pill)
+  // Client-side category filter for Perenual's cycle field
   const displayPlants = selectedCategory === "All"
     ? plants
     : plants.filter((p) =>
@@ -112,7 +104,7 @@ export default function Comp({ searchText }) {
 
   return (
     <aside>
-      {/* Category Filter Bar */}
+      {/* Left sidebar — category filter (original design) */}
       <div className="SlidePanel">
         {categories.map((category) => (
           <button
@@ -125,69 +117,52 @@ export default function Comp({ searchText }) {
         ))}
       </div>
 
-      {/* Status Bar */}
-      {!loading && (
-        <div style={{
-          textAlign: "center",
-          padding: "8px 16px",
-          fontSize: "0.82rem",
-          color: "var(--text-muted)",
-          marginBottom: "4px"
-        }}>
-          {usingFallback ? (
-            <span style={{ color: "#f59e0b", fontWeight: 600 }}>
-              ⚠️ Showing {plants.length} local plants (API unavailable)
-            </span>
-          ) : totalCount !== null ? (
-            <span>
-              🌿 Showing <strong>{displayPlants.length}</strong> of <strong>{totalCount.toLocaleString()}</strong> species from live database
-            </span>
-          ) : null}
-        </div>
-      )}
-
-      {/* Plant Grid */}
+      {/* Right — plant grid */}
       <article className="plant-grid">
-        {loading ? (
-          // Loading skeletons
-          Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="plant-skeleton" aria-hidden="true" />
-          ))
-        ) : entryElements.length === 0 ? (
-          <div className="empty-state">
-            <span className="empty-emoji">🌵</span>
-            <h3>No plants found</h3>
-            <p>Try a different search term or browse another category.</p>
+        {/* Status line */}
+        {!loading && (
+          <div style={{ width: "100%", marginBottom: "4px" }}>
+            {usingFallback ? (
+              <p style={{ color: "#f59e0b", fontWeight: 600, fontSize: "0.82rem" }}>
+                ⚠️ Showing {plants.length} local plants (live API unavailable)
+              </p>
+            ) : totalCount !== null ? (
+              <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
+                🌿 Showing <strong>{displayPlants.length}</strong> of{" "}
+                <strong>{totalCount.toLocaleString()}</strong> species from live database
+              </p>
+            ) : null}
           </div>
-        ) : (
-          entryElements
+        )}
+
+        {/* Loading skeletons */}
+        {loading
+          ? Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="plant-skeleton" aria-hidden="true" />
+            ))
+          : entryElements.length === 0
+          ? (
+            <div className="empty-state">
+              <span className="empty-emoji">🌵</span>
+              <h3>No plants found</h3>
+              <p>Try a different search term or browse another category.</p>
+            </div>
+          )
+          : entryElements}
+
+        {/* Load More — full width row at bottom of grid */}
+        {!loading && !usingFallback && hasMore && displayPlants.length > 0 && (
+          <div style={{ width: "100%", textAlign: "center", paddingTop: "16px" }}>
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="load-more-btn"
+            >
+              {loadingMore ? "Loading..." : "Load More Plants 🌱"}
+            </button>
+          </div>
         )}
       </article>
-
-      {/* Load More Button */}
-      {!loading && !usingFallback && hasMore && displayPlants.length > 0 && (
-        <div style={{ textAlign: "center", padding: "32px 0 16px" }}>
-          <button
-            onClick={handleLoadMore}
-            disabled={loadingMore}
-            style={{
-              background: "var(--primary)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "30px",
-              padding: "12px 36px",
-              fontSize: "0.95rem",
-              fontWeight: 700,
-              cursor: loadingMore ? "not-allowed" : "pointer",
-              opacity: loadingMore ? 0.7 : 1,
-              transition: "all 0.2s ease",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.15)"
-            }}
-          >
-            {loadingMore ? "Loading..." : "Load More Plants 🌱"}
-          </button>
-        </div>
-      )}
     </aside>
   );
 }
