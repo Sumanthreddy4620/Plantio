@@ -58,7 +58,6 @@ export default function Header() {
         <NavLink to="/diseases" onClick={closeMenu}>Plant Problems</NavLink>
         <NavLink to="/blog" onClick={closeMenu}>Blog</NavLink>
         <NavLink to="/your-plants" onClick={closeMenu}>Your Plants</NavLink>
-        <NavLink to="/ai-bot" className="nav-ai-link" onClick={closeMenu}>🤖 AI Doctor</NavLink>
 
         {user ? (
           <div className="nav-user-container">
