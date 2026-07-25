@@ -3,11 +3,11 @@ import Homegrid from "./Homegrid";
 import PlantOfDay from "./PlantOfDay";
 
 const QUICK_CATEGORIES = [
-  { name: "Houseplants", icon: "🪴", path: "/plants" },
+  { name: "Flowers", icon: "🌸", path: "/plants" },
+  { name: "Trees", icon: "🌲", path: "/plants" },
   { name: "Succulents & Cacti", icon: "🌵", path: "/plants" },
-  { name: "Flowers & Shrubs", icon: "🌸", path: "/plants" },
   { name: "Plant Problems", icon: "🦠", path: "/diseases" },
-  { name: "Care Guides", icon: "📚", path: "/blog" },
+  { name: "Botanical Guides", icon: "📚", path: "/blog" },
 ];
 
 export default function Second() {

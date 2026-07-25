@@ -9,13 +9,13 @@ export default function First() {
         <div className="home-first">
           <div className="hero-pill-badge">
             <span className="pill-sparkle">✨</span>
-            <span>#1 Plant Care & Botanical Guide</span>
+            <span>#1 Live Botanical & Plant Care Guide</span>
           </div>
 
           <h1>Keep Every Plant Alive & Thriving</h1>
           
           <p>
-            Personalized care schedules, smart watering reminders, step-by-step growing guides, and disease diagnosis for over 30,000+ plant species.
+            Explore over 300,000+ live plant species, diagnose 740+ pests & fungal diseases in real time, and get smart watering schedules for your personal garden.
           </p>
 
           {/* Action CTAs */}
@@ -36,7 +36,7 @@ export default function First() {
             </div>
             <div className="hero-highlight-item">
               <span className="hl-icon">☀️</span>
-              <span>Light Meter</span>
+              <span>Light Guide</span>
             </div>
             <div className="hero-highlight-item">
               <span className="hl-icon">🦠</span>
@@ -48,13 +48,13 @@ export default function First() {
         {/* Floating Stats Bar */}
         <div className="hero-stats-bar">
           <div className="hero-stat-item">
-            <h4>30,000+</h4>
-            <p>Plants Tracked</p>
+            <h4>300,000+</h4>
+            <p>Live Species</p>
           </div>
           <div className="hero-stat-divider"></div>
           <div className="hero-stat-item">
-            <h4>99.4%</h4>
-            <p>Care Accuracy</p>
+            <h4>740+</h4>
+            <p>Disease & Pest Fixes</p>
           </div>
           <div className="hero-stat-divider"></div>
           <div className="hero-stat-item">

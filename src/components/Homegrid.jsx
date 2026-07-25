@@ -5,7 +5,7 @@ export default function Homegrid() {
     <main className="home-grid">
       <div className="home-second-frame1">
         
-        {/* Frame 1: Light Meter */}
+        {/* Frame 1: Light Analysis */}
         <div className="frame1">
           <div className="feature-card-wrapper light-meter-card">
             <div className="card-badge">☀️ Light Analysis</div>
@@ -14,9 +14,9 @@ export default function Homegrid() {
               src="https://getplanta.com/_app/immutable/assets/light_meter.BwXMOkkv.avif"
               alt="Light Meter feature"
             />
-            <h3 className="home-name">Light Meter & Sunlight Guide</h3>
+            <h3 className="home-name">Sunlight & Exposure Guide</h3>
             <p className="home-name-info">
-              Unsure if a plant belongs in a dark bathroom or a sun-drenched windowsill? Get exact light requirements based on your room's orientation.
+              Unsure if a plant belongs in indirect light or full sun? Discover exact lighting requirements for over 300,000+ species.
             </p>
             <Link to="/plants" className="card-action-link">
               Explore Light Needs →
@@ -33,12 +33,12 @@ export default function Homegrid() {
               src="https://getplanta.com/_app/immutable/assets/Intelligent_water_reminders_large.CMYw5WYw.avif"
               alt="Intelligent watering reminders"
             />
-            <h3 className="home-name" style={{ color: "#e0ffc2" }}>Intelligent Watering Reminders</h3>
+            <h3 className="home-name" style={{ color: "#e0ffc2" }}>Intelligent Water Tracker</h3>
             <p className="home-name-info" style={{ color: "rgba(224, 255, 194, 0.88)" }}>
-              Our smart algorithm evaluates pot size, soil type, and weather conditions to notify you when it's the exact right time to water.
+              Keep your plants hydrated with one-click watering logs, custom frequency intervals, and cloud-synced Garden records.
             </p>
             <Link to="/your-plants" className="card-action-link light-link">
-              Set Up Reminders →
+              Set Up Tracker →
             </Link>
           </div>
         </div> 
@@ -47,7 +47,7 @@ export default function Homegrid() {
 
       <div className="home-second-frame2">
         
-        {/* Frame 3: Organization & Journal */}
+        {/* Frame 3: Garden Journal */}
         <div className="frame3">
           <div className="feature-card-wrapper journal-card">
             <div className="card-badge">📓 Garden Journal</div>
@@ -56,9 +56,9 @@ export default function Homegrid() {
               src="https://getplanta.com/_app/immutable/assets/plant_organization.CSuB463u.avif"
               alt="Plant organization & journal"
             />
-            <h3 className="home-name">Plant Organization & Journal</h3>
+            <h3 className="home-name">Personal Garden Manager</h3>
             <p className="home-name-info">
-              Keep your entire green collection under control. Track growth milestones, watering history, and repotting dates in one place.
+              Manage your green collection across devices. Sync added plants live between your mobile phone and laptop.
             </p>
             <Link to="/your-plants" className="card-action-link">
               View Your Garden →
@@ -66,18 +66,18 @@ export default function Homegrid() {
           </div>
         </div>
 
-        {/* Frame 4: Disease Diagnosis */}
+        {/* Frame 4: Disease & Pest Identification */}
         <div className="frame4">
           <div className="feature-card-wrapper disease-card">
-            <div className="card-badge">🦠 Health & Treatments</div>
+            <div className="card-badge">🦠 Health & Fixes</div>
             <img 
               className="home-image1"
               src="https://getplanta.com/_app/immutable/assets/plant_identification.D4UFhiuT.avif"
               alt="Plant Health & Disease identification"
             />
-            <h3 className="home-name">Disease & Pest Identification</h3>
+            <h3 className="home-name">740+ Disease & Pest Solutions</h3>
             <p className="home-name-info">
-              Yellow leaves or strange spots? Identify fungal infections, root rot, and pest infestations with step-by-step treatment solutions.
+              Yellow leaves or strange spots? Search fungal diseases, root rot, aphids, and mites with step-by-step organic remedies.
             </p>
             <Link to="/diseases" className="card-action-link">
               Diagnose Problems →
