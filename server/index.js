@@ -90,17 +90,16 @@ const server = http.createServer(async (req, res) => {
   };
 
   try {
-    // ── 0. EXTERNAL PERENUAL API PROXY ──
+    // ── 0a. EXTERNAL PERENUAL API PROXY (list + search) ──
     if (pathname === '/api/external-plants' && req.method === 'GET') {
-      const apiKey = process.env.PERENUAL_API_KEY || url.searchParams.get('key');
+      const apiKey = process.env.PERENUAL_API_KEY;
       if (!apiKey) {
-        return sendJson(400, {
-          error: 'Perenual API key missing. Pass ?key=YOUR_KEY or set PERENUAL_API_KEY environment variable.'
-        });
+        return sendJson(400, { error: 'Perenual API key not configured on server.' });
       }
 
       const page = url.searchParams.get('page') || '1';
-      const perenualUrl = `https://perenual.com/api/species-list?key=${apiKey}&page=${page}`;
+      const search = url.searchParams.get('search') || '';
+      const perenualUrl = `https://perenual.com/api/species-list?key=${apiKey}&page=${page}${search ? `&q=${encodeURIComponent(search)}` : ''}`;
 
       try {
         const perenualRes = await fetch(perenualUrl);
@@ -109,29 +108,85 @@ const server = http.createServer(async (req, res) => {
         if (perenualData && Array.isArray(perenualData.data)) {
           const mappedPlants = perenualData.data.map((item) => ({
             id: `perenual_${item.id}`,
-            title: item.common_name ? item.common_name.charAt(0).toUpperCase() + item.common_name.slice(1) : (item.scientific_name?.[0] || 'Unknown Plant'),
-            text: Array.isArray(item.scientific_name) ? item.scientific_name.join(', ') : item.scientific_name || '',
-            category: item.cycle || 'Houseplants',
+            title: item.common_name
+              ? item.common_name.charAt(0).toUpperCase() + item.common_name.slice(1)
+              : (item.scientific_name?.[0] || 'Unknown Plant'),
+            text: Array.isArray(item.scientific_name)
+              ? item.scientific_name.join(', ')
+              : (item.scientific_name || ''),
+            category: item.cycle || 'Perennial',
             img: {
-              src: item.default_image?.medium_url || item.default_image?.regular_url || 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80',
+              src: item.default_image?.medium_url
+                || item.default_image?.regular_url
+                || 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80',
               alt: item.common_name || 'Plant'
             },
-            watering: item.watering ? `Watering: ${item.watering}` : 'Regular watering',
-            light: Array.isArray(item.sunlight) ? item.sunlight.join(', ') : item.sunlight || 'Indirect light',
+            watering: item.watering || 'Regular',
+            light: Array.isArray(item.sunlight) ? item.sunlight.join(', ') : (item.sunlight || 'Indirect light'),
             difficulty: 'Moderate',
-            toxicity: 'Non-toxic'
+            toxicity: 'Check plant label'
           }));
 
           return sendJson(200, {
             total: perenualData.total,
-            page: perenualData.current_page,
+            lastPage: perenualData.last_page,
+            page: Number(page),
             plants: mappedPlants
           });
         }
 
-        return sendJson(500, { error: 'Failed to format Perenual API response.' });
+        return sendJson(500, { error: 'Unexpected Perenual API response format.' });
       } catch (err) {
-        return sendJson(500, { error: `Perenual API Fetch error: ${err.message}` });
+        return sendJson(500, { error: `Perenual API error: ${err.message}` });
+      }
+    }
+
+    // ── 0b. EXTERNAL PERENUAL SINGLE PLANT DETAIL ──
+    if (pathname.startsWith('/api/external-plants/') && req.method === 'GET') {
+      const apiKey = process.env.PERENUAL_API_KEY;
+      if (!apiKey) {
+        return sendJson(400, { error: 'Perenual API key not configured on server.' });
+      }
+
+      const rawId = pathname.split('/')[3]; // e.g. "perenual_42"
+      const numericId = rawId.startsWith('perenual_') ? rawId.replace('perenual_', '') : rawId;
+
+      try {
+        const detailRes = await fetch(`https://perenual.com/api/species/details/${numericId}?key=${apiKey}`);
+        const detail = await detailRes.json();
+
+        if (!detail || detail.error) {
+          return sendJson(404, { error: 'Plant not found in Perenual API.' });
+        }
+
+        const plant = {
+          id: `perenual_${detail.id}`,
+          title: detail.common_name
+            ? detail.common_name.charAt(0).toUpperCase() + detail.common_name.slice(1)
+            : (detail.scientific_name?.[0] || 'Unknown Plant'),
+          text: Array.isArray(detail.scientific_name)
+            ? detail.scientific_name.join(', ')
+            : (detail.scientific_name || ''),
+          category: detail.cycle || 'Perennial',
+          img: {
+            src: detail.default_image?.medium_url
+              || detail.default_image?.regular_url
+              || 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80',
+            alt: detail.common_name || 'Plant'
+          },
+          description: detail.description || null,
+          watering: detail.watering || 'Regular',
+          light: Array.isArray(detail.sunlight) ? detail.sunlight.join(', ') : (detail.sunlight || 'Indirect light'),
+          soil: detail.soil ? (Array.isArray(detail.soil) ? detail.soil.join(', ') : detail.soil) : 'Well-draining',
+          difficulty: detail.care_level || 'Moderate',
+          toxicity: detail.poisonous_to_humans ? 'Toxic to humans' : (detail.poisonous_to_pets ? 'Toxic to pets' : 'Non-toxic'),
+          height: detail.dimension || null,
+          originCountry: Array.isArray(detail.origin) ? detail.origin.join(', ') : null,
+        };
+
+        return sendJson(200, { plant });
+      } catch (err) {
+        return sendJson(500, { error: `Perenual detail API error: ${err.message}` });
       }
     }
     // ── 1. SIGNUP ──

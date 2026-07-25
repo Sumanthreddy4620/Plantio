@@ -2064,3 +2064,22 @@ aside {
     padding: 24px 16px;
   }
 }
+
+/* ===================== PLANT SKELETON LOADING ===================== */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+
+.plant-skeleton {
+  border-radius: var(--radius);
+  height: 320px;
+  background: linear-gradient(
+    90deg,
+    #e8f5f0 25%,
+    #d0ede4 50%,
+    #e8f5f0 75%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+}

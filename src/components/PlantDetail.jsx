@@ -1,18 +1,65 @@
 import { useParams, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import dataPlant from "./data-plant";
+import API_BASE_URL from "../config";
 
 const PLACEHOLDER = "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=900&q=80";
 
 export default function PlantDetail() {
   const { id } = useParams();
-  const plant = dataPlant.find((p) => p.id === Number(id));
+  const isLiveId = id && id.startsWith("perenual_");
 
-  if (!plant) {
+  // For local plants (numeric IDs), find immediately
+  const localPlant = !isLiveId ? dataPlant.find((p) => p.id === Number(id)) : null;
+
+  const [plant, setPlant] = useState(localPlant || null);
+  const [loading, setLoading] = useState(isLiveId);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!isLiveId) return;
+
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    fetch(`${API_BASE_URL}/api/external-plants/${id}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Plant not found");
+        return res.json();
+      })
+      .then((data) => {
+        if (!cancelled) setPlant(data.plant);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [id, isLiveId]);
+
+  if (loading) {
+    return (
+      <div className="plant-detail">
+        <div className="detail-body" style={{ textAlign: "center", paddingTop: "80px" }}>
+          <p style={{ fontSize: "3rem" }}>🌱</p>
+          <h2>Loading plant details...</h2>
+          <p style={{ color: "var(--text-muted)" }}>Fetching from live database</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !plant) {
     return (
       <div className="plant-detail">
         <div className="detail-body" style={{ textAlign: "center", paddingTop: "80px" }}>
           <p style={{ fontSize: "3rem" }}>🌿</p>
           <h2>Plant not found</h2>
+          <p style={{ color: "var(--text-muted)", marginBottom: "20px" }}>{error || "This plant could not be loaded."}</p>
           <Link to="/plants" className="back-btn" style={{ marginTop: "20px", display: "inline-flex" }}>
             ← Back to Plants
           </Link>
@@ -26,8 +73,8 @@ export default function PlantDetail() {
       {/* Hero */}
       <div className="detail-hero">
         <img
-          src={plant.img.src}
-          alt={plant.img.alt}
+          src={plant.img?.src || PLACEHOLDER}
+          alt={plant.img?.alt || plant.title}
           onError={(e) => { e.target.src = PLACEHOLDER; }}
         />
         <div className="detail-hero-text">
@@ -63,6 +110,23 @@ export default function PlantDetail() {
           📦 {plant.category}
         </span>
 
+        {/* Origin country if available (Perenual plants) */}
+        {plant.originCountry && (
+          <span
+            style={{
+              marginLeft: "10px",
+              background: "#ecfdf5",
+              color: "#065f46",
+              padding: "5px 14px",
+              borderRadius: "20px",
+              fontSize: "0.82rem",
+              fontWeight: 700,
+            }}
+          >
+            🌍 {plant.originCountry}
+          </span>
+        )}
+
         {/* Description */}
         <p className="detail-desc">
           {plant.description ||
@@ -91,6 +155,13 @@ export default function PlantDetail() {
             <span className="care-label">Toxicity</span>
             <span className="care-value">{plant.toxicity || "Check before purchase"}</span>
           </div>
+          {plant.height && (
+            <div className="care-card">
+              <span className="care-icon">📏</span>
+              <span className="care-label">Height</span>
+              <span className="care-value">{plant.height}</span>
+            </div>
+          )}
         </div>
 
         {/* Add to Your Plants */}
