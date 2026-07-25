@@ -16,7 +16,7 @@ function useDebounce(value, delay) {
 const categories = [
   "All", "Cactuses", "Succulents", "Flowers",
   "Trees", "Grasses", "Shrubs", "Ferns",
-  "Herbs", "Foliage", "Aquatics", "Mushrooms", "Weeds",
+  "Herbs", "Aquatics", "Mushrooms", "Weeds",
 ];
 
 // Map our UI categories → Perenual search terms
@@ -29,7 +29,6 @@ const CATEGORY_SEARCH_MAP = {
   "Shrubs": "shrub",
   "Ferns": "fern",
   "Herbs": "herb",
-  "Foliage": "foliage",
   "Aquatics": "aquatic",
   "Mushrooms": "mushroom",
   "Weeds": "weed",

@@ -20,23 +20,31 @@ export default function Blogcomp({ searchText }) {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [usingFallback, setUsingFallback] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(null);
   const debouncedSearch = useDebounce(searchText, 400);
   const isMounted = useRef(true);
 
   useEffect(() => {
     isMounted.current = true;
-    fetchBlogs();
+    setBlogs([]);
+    setPage(1);
+    setHasMore(true);
+    fetchBlogs(1, true);
     return () => { isMounted.current = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, selectedCategory]);
 
-  const fetchBlogs = useCallback(async () => {
-    setLoading(true);
+  const fetchBlogs = useCallback(async (pageNum, isReset = false) => {
+    if (isReset) setLoading(true);
+    else setLoadingMore(true);
 
     try {
       const queryParams = new URLSearchParams({
+        page: pageNum,
         search: debouncedSearch,
         category: selectedCategory
       });
@@ -47,28 +55,39 @@ export default function Blogcomp({ searchText }) {
       if (!isMounted.current) return;
 
       const newBlogs = data.blogs || [];
-      setBlogs(newBlogs);
-      setTotalCount(data.total || newBlogs.length);
+      setBlogs((prev) => isReset ? newBlogs : [...prev, ...newBlogs]);
+      setTotalCount(data.total || null);
+      setHasMore(pageNum < (data.lastPage || 1));
       setUsingFallback(false);
     } catch {
       if (!isMounted.current) return;
-      // Fallback to static dataBlog
-      const catFilter = selectedCategory === "All"
-        ? dataBlog
-        : dataBlog.filter((post) => post.category === selectedCategory);
-      const filtered = catFilter.filter((post) =>
-        post.title.toLowerCase().includes(debouncedSearch.toLowerCase())
-      );
-      setBlogs(filtered);
-      setTotalCount(filtered.length);
-      setUsingFallback(true);
+      if (isReset) {
+        // Fallback to static dataBlog
+        const catFilter = selectedCategory === "All"
+          ? dataBlog
+          : dataBlog.filter((post) => post.category === selectedCategory);
+        const filtered = catFilter.filter((post) =>
+          post.title.toLowerCase().includes(debouncedSearch.toLowerCase())
+        );
+        setBlogs(filtered);
+        setTotalCount(filtered.length);
+        setHasMore(false);
+        setUsingFallback(true);
+      }
     } finally {
       if (isMounted.current) {
         setLoading(false);
+        setLoadingMore(false);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, selectedCategory]);
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchBlogs(nextPage, false);
+  };
 
   const entryElements = blogs.map((entry) => (
     <BlogGrid
@@ -123,6 +142,19 @@ export default function Blogcomp({ searchText }) {
             </div>
           )
           : entryElements}
+
+        {/* Load More Articles Button */}
+        {!loading && !usingFallback && hasMore && blogs.length > 0 && (
+          <div style={{ width: "100%", textAlign: "center", paddingTop: "16px" }}>
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="load-more-btn"
+            >
+              {loadingMore ? "Loading..." : "Load More Articles 📰"}
+            </button>
+          </div>
+        )}
       </article>
     </aside>
   );

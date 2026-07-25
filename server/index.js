@@ -86,7 +86,6 @@ function getPlantCategory(item, searchParam = '', categoryParam = '') {
   if (queryLower.includes('shrub')) return 'Shrubs';
   if (queryLower.includes('fern')) return 'Ferns';
   if (queryLower.includes('herb')) return 'Herbs';
-  if (queryLower.includes('foliage')) return 'Foliage';
   if (queryLower.includes('aquatic')) return 'Aquatics';
   if (queryLower.includes('mushroom')) return 'Mushrooms';
   if (queryLower.includes('weed')) return 'Weeds';
@@ -357,22 +356,27 @@ const server = http.createServer(async (req, res) => {
       const page = Number(url.searchParams.get('page') || '1');
       const search = url.searchParams.get('search') || '';
       const category = url.searchParams.get('category') || 'All';
-      const perPage = 20;
+      const perPage = 12;
+      const offset = (page - 1) * perPage;
 
       let searchTerm = search.trim();
       if (!searchTerm) {
-        if (category === 'Watering') searchTerm = 'houseplant watering guide';
-        else if (category === 'Diseases') searchTerm = 'plant disease treatment';
-        else if (category === 'Indoor Plants') searchTerm = 'indoor houseplant care';
-        else if (category === 'Outdoor Plants') searchTerm = 'garden landscaping care';
-        else searchTerm = 'plant care guide';
+        if (category === 'Watering') searchTerm = 'plant watering irrigation horticulture';
+        else if (category === 'Diseases') searchTerm = 'plant disease pest control gardening';
+        else if (category === 'Indoor Plants') searchTerm = 'houseplant indoor gardening cultivation';
+        else if (category === 'Outdoor Plants') searchTerm = 'gardening landscaping botany pruning';
+        else if (category === 'Plant Care') searchTerm = 'gardening plant care fertilizing soil';
+        else searchTerm = 'horticulture gardening plant care';
+      } else {
+        searchTerm = `${searchTerm} plant care gardening`;
       }
 
       const wikiUrl = `https://en.wikipedia.org/w/api.php?` + new URLSearchParams({
         action: 'query',
         generator: 'search',
-        gsrsearch: `${searchTerm} plant`,
+        gsrsearch: searchTerm,
         gsrlimit: perPage,
+        gsroffset: offset,
         prop: 'pageimages|extracts',
         piprop: 'thumbnail',
         pithumbsize: 600,
@@ -390,7 +394,7 @@ const server = http.createServer(async (req, res) => {
 
         const mappedBlogs = pageList.map((item, idx) => {
           const title = item.title;
-          const snippet = item.extract ? item.extract.slice(0, 140) + '...' : `Complete guide on ${title} care and cultivation.`;
+          const snippet = item.extract ? item.extract.slice(0, 140) + '...' : `Essential guide on ${title} for gardeners and plant enthusiasts.`;
           const cat = category !== 'All' ? category : (idx % 2 === 0 ? 'Plant Care' : 'Indoor Plants');
           const imgUrl = item.thumbnail?.source || `https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80`;
 
@@ -406,10 +410,13 @@ const server = http.createServer(async (req, res) => {
           };
         });
 
+        const totalHits = wikiData.query?.searchinfo?.totalhits || mappedBlogs.length * 5;
+        const lastPage = Math.ceil(totalHits / perPage);
+
         return sendJson(200, {
-          total: mappedBlogs.length,
-          lastPage: 1,
-          page: 1,
+          total: totalHits,
+          lastPage: Math.min(lastPage, 10), // cap at 10 pages for smooth loading
+          page: page,
           blogs: mappedBlogs
         });
       } catch (err) {
