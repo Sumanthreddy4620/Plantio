@@ -116,5 +116,21 @@ export const db = {
       return today;
     }
     return null;
+  },
+
+  // Update plant / watering reminder
+  updatePlant(id, userId, { title, text, imgUrl, wateringFrequency, lastWatered }) {
+    const data = readDb();
+    const plant = data.user_plants.find(p => p.id === Number(id) && p.userId === userId);
+    if (plant) {
+      if (title !== undefined) plant.title = title.trim();
+      if (text !== undefined) plant.text = text;
+      if (imgUrl !== undefined) plant.imgUrl = imgUrl;
+      if (wateringFrequency !== undefined) plant.wateringFrequency = String(wateringFrequency);
+      if (lastWatered !== undefined) plant.lastWatered = lastWatered;
+      writeDb(data);
+      return plant;
+    }
+    return null;
   }
 };

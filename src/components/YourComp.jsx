@@ -174,6 +174,89 @@ export default function YourComp() {
     );
   }
 
+  // ── EDIT / MODIFY PLANT REMINDER ──
+  const [editingPlant, setEditingPlant] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    title: "",
+    text: "",
+    imgUrl: "",
+    wateringFrequency: "7",
+    lastWatered: new Date().toISOString().split("T")[0],
+  });
+
+  function startEdit(plant) {
+    setEditingPlant(plant);
+    setEditFormData({
+      title: plant.title || "",
+      text: plant.text || "",
+      imgUrl: plant.imgUrl || "",
+      wateringFrequency: String(plant.wateringFrequency || "7"),
+      lastWatered: plant.lastWatered || new Date().toISOString().split("T")[0],
+    });
+  }
+
+  function handleEditChange(e) {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
+  }
+
+  function handleEditFileSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Please select an image smaller than 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setEditFormData((prev) => ({
+        ...prev,
+        imgUrl: event.target.result
+      }));
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function handleUpdateSubmit(e) {
+    e.preventDefault();
+    if (!editingPlant || !editFormData.title.trim()) return;
+
+    let updatedPlant = null;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/user-plants/${editingPlant.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(editFormData)
+      });
+      const data = await res.json();
+      if (res.ok && data.plant) {
+        updatedPlant = data.plant;
+      }
+    } catch {
+      // Fallback for Vercel / offline
+    }
+
+    if (!updatedPlant) {
+      updatedPlant = {
+        ...editingPlant,
+        ...editFormData
+      };
+    }
+
+    setEntries((prev) => {
+      const updatedList = prev.map((p) => (p.id === editingPlant.id ? updatedPlant : p));
+      localStorage.setItem("plantio_local_plants", JSON.stringify(updatedList));
+      return updatedList;
+    });
+
+    setEditingPlant(null);
+  }
+
   // If user is not logged in, prompt to log in / sign up
   if (!token || !user) {
     return (
@@ -315,6 +398,97 @@ export default function YourComp() {
         </div>
       )}
 
+      {/* Modify / Edit Plant Popup Form */}
+      {editingPlant && (
+        <div className="popup" onClick={(e) => e.target === e.currentTarget && setEditingPlant(null)}>
+          <form onSubmit={handleUpdateSubmit}>
+            <h3>✏️ Modify Plant & Reminder</h3>
+
+            <input
+              name="title"
+              placeholder="Plant name *"
+              value={editFormData.title}
+              onChange={handleEditChange}
+              required
+            />
+            <textarea
+              name="text"
+              placeholder="Description or notes"
+              value={editFormData.text}
+              onChange={handleEditChange}
+            />
+
+            {/* Photo Selection from device gallery or folder */}
+            <div className="form-photo-picker">
+              {editFormData.imgUrl ? (
+                <div className="photo-preview-box">
+                  <img src={editFormData.imgUrl} alt="Plant preview" className="photo-preview-img" />
+                  <button
+                    type="button"
+                    className="remove-photo-btn"
+                    onClick={() => setEditFormData(prev => ({ ...prev, imgUrl: "" }))}
+                  >
+                    🗑 Remove Photo
+                  </button>
+                </div>
+              ) : (
+                <div className="photo-dropzone">
+                  <label htmlFor="edit-photo-input" className="photo-upload-label">
+                    <span style={{ fontSize: "1.8rem" }}>📸</span>
+                    <span style={{ fontWeight: 800, fontSize: "0.9rem", color: "var(--primary-dark)" }}>
+                      Change Photo from Gallery
+                    </span>
+                  </label>
+                  <input
+                    id="edit-photo-input"
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={handleEditFileSelect}
+                  />
+                </div>
+              )}
+            </div>
+
+            <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "-4px" }}>
+              Watering Reminder Frequency:
+            </label>
+            <select
+              name="wateringFrequency"
+              value={editFormData.wateringFrequency}
+              onChange={handleEditChange}
+            >
+              <option value="1">💧 Water every day (1 day)</option>
+              <option value="2">💧 Every 2 days</option>
+              <option value="3">💧 Every 3 days</option>
+              <option value="7">💧 Every week (7 days)</option>
+              <option value="14">💧 Every 2 weeks (14 days)</option>
+              <option value="30">💧 Every month (30 days)</option>
+            </select>
+
+            <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "-4px" }}>
+              Last Watered Date:
+            </label>
+            <input
+              name="lastWatered"
+              type="date"
+              value={editFormData.lastWatered}
+              onChange={handleEditChange}
+              title="Last watered date"
+            />
+
+            <div className="popup-actions">
+              <button type="submit" className="submit-btn" style={{ background: "var(--primary)" }}>
+                Save Changes
+              </button>
+              <button type="button" className="cancel-btn" onClick={() => setEditingPlant(null)}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Header Info */}
       <div style={{ padding: "24px 24px 0", maxWidth: "1200px", width: "100%" }}>
         <p className="SlidePanel-your">
@@ -338,6 +512,7 @@ export default function YourComp() {
               entry={entry}
               onDelete={() => handleDelete(entry.id)}
               onWater={() => handleWater(entry.id)}
+              onEdit={() => startEdit(entry)}
             />
           ))}
 

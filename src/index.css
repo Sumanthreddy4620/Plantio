@@ -2200,3 +2200,25 @@ aside {
 .remove-photo-btn:hover {
   background: #fca5a5;
 }
+
+.your-edit-btn {
+  background: white;
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.14);
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.your-edit-btn:hover {
+  background: #ecfdf5;
+  border-color: var(--primary);
+  transform: scale(1.1);
+}

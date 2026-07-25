@@ -701,6 +701,22 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // ── 8. UPDATE PLANT / WATERING REMINDER ──
+    if (pathname.startsWith('/api/user-plants/') && req.method === 'PUT') {
+      const user = authenticate(req);
+      if (!user) return sendJson(401, { error: 'Unauthorized. Please log in.' });
+
+      const plantId = pathname.split('/')[3];
+      const body = await getJsonBody(req);
+      const updatedPlant = db.updatePlant(plantId, user.id, body);
+
+      if (updatedPlant) {
+        return sendJson(200, { message: 'Plant reminder updated successfully!', plant: updatedPlant });
+      } else {
+        return sendJson(404, { error: 'Plant not found.' });
+      }
+    }
+
     // 404 Catch-all
     sendJson(404, { error: 'Endpoint not found.' });
   } catch (err) {
