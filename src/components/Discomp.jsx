@@ -111,10 +111,10 @@ export default function Discomp({ searchText }) {
         ))}
       </div>
 
-      <article className="plant-grid">
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}>
         {/* Status indicator */}
         {!loading && (
-          <div style={{ gridColumn: "1 / -1", marginBottom: "4px" }}>
+          <div>
             {usingFallback ? (
               <p style={{ color: "#f59e0b", fontWeight: 600, fontSize: "0.82rem" }}>
                 ⚠️ Showing {diseases.length} local plant problems (API unavailable)
@@ -128,23 +128,26 @@ export default function Discomp({ searchText }) {
           </div>
         )}
 
-        {loading
-          ? Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="plant-skeleton" aria-hidden="true" />
-            ))
-          : entryElements.length === 0
-          ? (
-            <div className="empty-state">
-              <span className="empty-emoji">🔍</span>
-              <h3>No results found</h3>
-              <p>Try a different search or browse all problems.</p>
-            </div>
-          )
-          : entryElements}
+        <article className="plant-grid">
+          {loading
+            ? Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="plant-skeleton" aria-hidden="true" />
+              ))
+            : entryElements.length === 0
+            ? (
+              <div className="empty-state">
+                <span className="empty-emoji">🔍</span>
+                <h3>No results found</h3>
+                <p>Try a different search or browse all problems.</p>
+              </div>
+            )
+            : entryElements
+          }
+        </article>
 
         {/* Load More Button */}
         {!loading && !usingFallback && hasMore && diseases.length > 0 && (
-          <div style={{ width: "100%", textAlign: "center", paddingTop: "16px" }}>
+          <div style={{ textAlign: "center", margin: "24px 0 12px" }}>
             <button
               onClick={handleLoadMore}
               disabled={loadingMore}
@@ -154,7 +157,7 @@ export default function Discomp({ searchText }) {
             </button>
           </div>
         )}
-      </article>
+      </div>
     </aside>
   );
 }

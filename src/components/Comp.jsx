@@ -150,11 +150,11 @@ export default function Comp({ searchText }) {
         ))}
       </div>
 
-      {/* Right — plant grid */}
-      <article className="plant-grid">
+      {/* Right — plant grid container */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}>
         {/* Status line */}
         {!loading && (
-          <div style={{ gridColumn: "1 / -1", marginBottom: "4px" }}>
+          <div>
             {usingFallback ? (
               <p style={{ color: "#f59e0b", fontWeight: 600, fontSize: "0.82rem" }}>
                 ⚠️ {fallbackReason || "Showing local plants (live API unavailable)"}
@@ -168,33 +168,36 @@ export default function Comp({ searchText }) {
           </div>
         )}
 
-        {loading
-          ? Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="plant-skeleton" aria-hidden="true" />
-            ))
-          : entryElements.length === 0
-          ? (
-            <div className="empty-state">
-              <span className="empty-emoji">🌵</span>
-              <h3>No plants found</h3>
-              <p>Try a different search term or browse another category.</p>
-            </div>
-          )
-          : entryElements}
+        <article className="plant-grid">
+          {loading
+            ? Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="plant-skeleton" aria-hidden="true" />
+              ))
+            : entryElements.length === 0
+            ? (
+              <div className="empty-state">
+                <span className="empty-emoji">🌵</span>
+                <h3>No plants found</h3>
+                <p>Try a different search term or browse another category.</p>
+              </div>
+            )
+            : entryElements
+          }
+        </article>
 
-        {/* Load More */}
-        {!loading && !usingFallback && hasMore && plants.length > 0 && (
-          <div style={{ width: "100%", textAlign: "center", paddingTop: "16px" }}>
+        {/* Load More Button */}
+        {!loading && hasMore && (
+          <div style={{ textAlign: "center", margin: "24px 0 12px" }}>
             <button
-              onClick={handleLoadMore}
+              onClick={() => setPage((p) => p + 1)}
               disabled={loadingMore}
               className="load-more-btn"
             >
-              {loadingMore ? "Loading..." : "Load More Plants 🌱"}
+              {loadingMore ? "Loading more species..." : "Load More Plants ↓"}
             </button>
           </div>
         )}
-      </article>
+      </div>
     </aside>
   );
 }
