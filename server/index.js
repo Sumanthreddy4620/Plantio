@@ -2,7 +2,7 @@ import http from 'http';
 import crypto from 'crypto';
 import { db } from './db.js';
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // Active session token store: token -> userObj
 const activeTokens = new Map();
