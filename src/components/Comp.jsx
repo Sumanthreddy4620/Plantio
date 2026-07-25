@@ -154,7 +154,7 @@ export default function Comp({ searchText }) {
       <article className="plant-grid">
         {/* Status line */}
         {!loading && (
-          <div style={{ width: "100%", marginBottom: "4px" }}>
+          <div style={{ gridColumn: "1 / -1", marginBottom: "4px" }}>
             {usingFallback ? (
               <p style={{ color: "#f59e0b", fontWeight: 600, fontSize: "0.82rem" }}>
                 ⚠️ {fallbackReason || "Showing local plants (live API unavailable)"}

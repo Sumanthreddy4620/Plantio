@@ -6,37 +6,39 @@ export default function Blog() {
   const [searchText, setSearchText] = useState("");
 
   return (
-    <main>
-      <div className="FirstComp">
-        {/* Left: text */}
-        <div className="FirstComp-text">
-          <h4>
-            <Link to="/">Plantio → </Link>
-            Blog
-          </h4>
-          <h3>Plant Blog – Grow Plants & Knowledge</h3>
-          <p>
-            Grow your Botany knowledge like you grow your greenies with our plant blog articles.
-          </p>
-        </div>
+    <>
+      <main>
+        <div className="FirstComp">
+          {/* Left: text */}
+          <div className="FirstComp-text">
+            <h4>
+              <Link to="/">Plantio → </Link>
+              Blog
+            </h4>
+            <h3>Plant Blog – Grow Plants & Knowledge</h3>
+            <p>
+              Grow your Botany knowledge like you grow your greenies with our plant blog articles.
+            </p>
+          </div>
 
-        {/* Right: search */}
-        <div className="FirstComp-search">
-          <form onSubmit={(e) => e.preventDefault()}>
-            <input
-              className="bar"
-              placeholder="Search articles…"
-              type="text"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-            />
-            <button type="submit" className="but">🔍︎</button>
-          </form>
-          <span>Browse botanical guides & care tips</span>
+          {/* Right: search */}
+          <div className="FirstComp-search">
+            <form onSubmit={(e) => e.preventDefault()}>
+              <input
+                className="bar"
+                placeholder="Search articles…"
+                type="text"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+              />
+              <button type="submit" className="but">🔍︎</button>
+            </form>
+            <span>Browse botanical guides & care tips</span>
+          </div>
         </div>
-      </div>
+      </main>
 
       <Comp searchText={searchText} />
-    </main>
+    </>
   );
 }
