@@ -1,20 +1,76 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import BlogGrid from "./Bloggrid";
 import dataBlog from "./data-blog";
+import API_BASE_URL from "../config";
+
+function useDebounce(value, delay) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
+const categories = [
+  "All", "Plant Care", "Watering", "Diseases", "Indoor Plants", "Outdoor Plants",
+];
 
 export default function Blogcomp({ searchText }) {
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [usingFallback, setUsingFallback] = useState(false);
+  const [totalCount, setTotalCount] = useState(null);
+  const debouncedSearch = useDebounce(searchText, 400);
+  const isMounted = useRef(true);
 
-  const categoryFiltered =
-    selectedCategory === "All"
-      ? dataBlog
-      : dataBlog.filter((post) => post.category === selectedCategory);
+  useEffect(() => {
+    isMounted.current = true;
+    fetchBlogs();
+    return () => { isMounted.current = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, selectedCategory]);
 
-  const finalFiltered = categoryFiltered.filter((post) =>
-    post.title.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const fetchBlogs = useCallback(async () => {
+    setLoading(true);
 
-  const entryElements = finalFiltered.map((entry) => (
+    try {
+      const queryParams = new URLSearchParams({
+        search: debouncedSearch,
+        category: selectedCategory
+      });
+      const res = await fetch(`${API_BASE_URL}/api/external-blogs?${queryParams}`);
+      if (!res.ok) throw new Error("Blog API unavailable");
+      const data = await res.json();
+
+      if (!isMounted.current) return;
+
+      const newBlogs = data.blogs || [];
+      setBlogs(newBlogs);
+      setTotalCount(data.total || newBlogs.length);
+      setUsingFallback(false);
+    } catch {
+      if (!isMounted.current) return;
+      // Fallback to static dataBlog
+      const catFilter = selectedCategory === "All"
+        ? dataBlog
+        : dataBlog.filter((post) => post.category === selectedCategory);
+      const filtered = catFilter.filter((post) =>
+        post.title.toLowerCase().includes(debouncedSearch.toLowerCase())
+      );
+      setBlogs(filtered);
+      setTotalCount(filtered.length);
+      setUsingFallback(true);
+    } finally {
+      if (isMounted.current) {
+        setLoading(false);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, selectedCategory]);
+
+  const entryElements = blogs.map((entry) => (
     <BlogGrid
       key={entry.id}
       id={entry.id}
@@ -23,10 +79,6 @@ export default function Blogcomp({ searchText }) {
       text={entry.text}
     />
   ));
-
-  const categories = [
-    "All", "Plant Care", "Watering", "Diseases", "Indoor Plants", "Outdoor Plants",
-  ];
 
   return (
     <aside>
@@ -43,15 +95,34 @@ export default function Blogcomp({ searchText }) {
       </div>
 
       <article className="plant-grid">
-        {entryElements.length === 0 ? (
-          <div className="empty-state">
-            <span className="empty-emoji">📰</span>
-            <h3>No articles found</h3>
-            <p>Try a different search term or browse another category.</p>
+        {/* Status bar */}
+        {!loading && (
+          <div style={{ width: "100%", marginBottom: "4px" }}>
+            {usingFallback ? (
+              <p style={{ color: "#f59e0b", fontWeight: 600, fontSize: "0.82rem" }}>
+                ⚠️ Showing {blogs.length} local articles (API unavailable)
+              </p>
+            ) : totalCount !== null ? (
+              <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
+                📰 Showing <strong>{blogs.length}</strong> botanical guides & articles from live database
+              </p>
+            ) : null}
           </div>
-        ) : (
-          entryElements
         )}
+
+        {loading
+          ? Array.from({ length: 9 }).map((_, i) => (
+              <div key={i} className="plant-skeleton" style={{ height: "335px" }} aria-hidden="true" />
+            ))
+          : entryElements.length === 0
+          ? (
+            <div className="empty-state">
+              <span className="empty-emoji">📰</span>
+              <h3>No articles found</h3>
+              <p>Try a different search term or browse another category.</p>
+            </div>
+          )
+          : entryElements}
       </article>
     </aside>
   );

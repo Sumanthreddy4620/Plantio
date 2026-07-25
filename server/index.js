@@ -352,6 +352,133 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // ── 0e. BOTANICAL BLOG & GARDENING ARTICLES PROXY ──
+    if (pathname === '/api/external-blogs' && req.method === 'GET') {
+      const page = Number(url.searchParams.get('page') || '1');
+      const search = url.searchParams.get('search') || '';
+      const category = url.searchParams.get('category') || 'All';
+      const perPage = 20;
+
+      let searchTerm = search.trim();
+      if (!searchTerm) {
+        if (category === 'Watering') searchTerm = 'houseplant watering guide';
+        else if (category === 'Diseases') searchTerm = 'plant disease treatment';
+        else if (category === 'Indoor Plants') searchTerm = 'indoor houseplant care';
+        else if (category === 'Outdoor Plants') searchTerm = 'garden landscaping care';
+        else searchTerm = 'plant care guide';
+      }
+
+      const wikiUrl = `https://en.wikipedia.org/w/api.php?` + new URLSearchParams({
+        action: 'query',
+        generator: 'search',
+        gsrsearch: `${searchTerm} plant`,
+        gsrlimit: perPage,
+        prop: 'pageimages|extracts',
+        piprop: 'thumbnail',
+        pithumbsize: 600,
+        exintro: 1,
+        explaintext: 1,
+        format: 'json',
+        origin: '*'
+      });
+
+      try {
+        const wikiRes = await fetch(wikiUrl);
+        const wikiData = await wikiRes.json();
+        const pages = wikiData.query?.pages || {};
+        const pageList = Object.values(pages);
+
+        const mappedBlogs = pageList.map((item, idx) => {
+          const title = item.title;
+          const snippet = item.extract ? item.extract.slice(0, 140) + '...' : `Complete guide on ${title} care and cultivation.`;
+          const cat = category !== 'All' ? category : (idx % 2 === 0 ? 'Plant Care' : 'Indoor Plants');
+          const imgUrl = item.thumbnail?.source || `https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80`;
+
+          return {
+            id: `blog_live_${item.pageid}`,
+            title: title,
+            text: snippet,
+            category: cat,
+            img: imgUrl,
+            readTime: `${4 + (idx % 4)} min read`,
+            fullExtract: item.extract || snippet,
+            wikipediaUrl: `https://en.wikipedia.org/?curid=${item.pageid}`
+          };
+        });
+
+        return sendJson(200, {
+          total: mappedBlogs.length,
+          lastPage: 1,
+          page: 1,
+          blogs: mappedBlogs
+        });
+      } catch (err) {
+        return sendJson(500, { error: `Blog API error: ${err.message}` });
+      }
+    }
+
+    // ── 0f. SINGLE BLOG ARTICLE DETAIL PROXY ──
+    if (pathname.startsWith('/api/external-blogs/') && req.method === 'GET') {
+      const rawId = pathname.split('/')[3];
+      const pageId = rawId.startsWith('blog_live_') ? rawId.replace('blog_live_', '') : rawId;
+
+      try {
+        const detailUrl = `https://en.wikipedia.org/w/api.php?` + new URLSearchParams({
+          action: 'query',
+          pageids: pageId,
+          prop: 'pageimages|extracts',
+          piprop: 'thumbnail',
+          pithumbsize: 900,
+          explaintext: 1,
+          format: 'json',
+          origin: '*'
+        });
+
+        const detailRes = await fetch(detailUrl);
+        const detailData = await detailRes.json();
+        const pageObj = detailData.query?.pages?.[pageId];
+
+        if (!pageObj) {
+          return sendJson(404, { error: 'Article not found.' });
+        }
+
+        const title = pageObj.title;
+        const text = pageObj.extract || '';
+        const imgUrl = pageObj.thumbnail?.source || `https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=900&q=80`;
+
+        // Split long Wikipedia extract into structured section blocks
+        const paragraphs = text.split('\n').filter(p => p.trim().length > 0);
+        const blocks = [];
+
+        paragraphs.forEach((p, i) => {
+          if (p.length < 50 && !p.endsWith('.')) {
+            blocks.push({ type: 'h2', text: p });
+          } else {
+            blocks.push({ type: 'p', text: p });
+          }
+        });
+
+        if (blocks.length === 0) {
+          blocks.push({ type: 'p', text: `Detailed botanical overview of ${title}.` });
+        }
+
+        const post = {
+          id: `blog_live_${pageObj.pageid}`,
+          title: title,
+          text: paragraphs[0] ? paragraphs[0].slice(0, 150) + '...' : `Everything you need to know about ${title}.`,
+          category: 'Plant Care',
+          img: imgUrl,
+          content: blocks,
+          readTime: `${Math.max(3, Math.ceil(text.length / 500))} min read`,
+          wikipediaUrl: `https://en.wikipedia.org/?curid=${pageObj.pageid}`
+        };
+
+        return sendJson(200, { post });
+      } catch (err) {
+        return sendJson(500, { error: `Blog detail API error: ${err.message}` });
+      }
+    }
+
     // ── 1. SIGNUP ──
     if (pathname === '/api/signup' && req.method === 'POST') {
       const body = await getJsonBody(req);
