@@ -606,21 +606,15 @@ const server = http.createServer(async (req, res) => {
       }
 
       const cleanEmail = email.toLowerCase().trim();
-      let user = db.findUserByEmail(cleanEmail);
-      const hashedPassword = hashPassword(password);
+      const user = db.findUserByEmail(cleanEmail);
 
       if (!user) {
-        const namePart = cleanEmail.split('@')[0] || 'Gardener';
-        const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-        user = db.createUser({
-          firstName: formattedName,
-          lastName: '',
-          email: cleanEmail,
-          password: hashedPassword
-        });
-      } else if (user.password !== hashedPassword) {
-        // Update password hash for existing user
-        user.password = hashedPassword;
+        return sendJson(401, { error: 'Invalid email or password.' });
+      }
+
+      const hashedPassword = hashPassword(password);
+      if (user.password !== hashedPassword) {
+        return sendJson(401, { error: 'Invalid email or password.' });
       }
 
       const userObj = {
