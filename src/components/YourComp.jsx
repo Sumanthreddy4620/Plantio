@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import YourGrid from "./YourGrid";
+import API_BASE_URL from "../config";
 
 export default function YourComp() {
   const [showForm, setShowForm] = useState(false);
@@ -51,7 +52,7 @@ export default function YourComp() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("http://localhost:5000/api/user-plants", {
+      const res = await fetch(`${API_BASE_URL}/api/user-plants`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -77,7 +78,7 @@ export default function YourComp() {
 
     let newPlant = null;
     try {
-      const res = await fetch("http://localhost:5000/api/user-plants", {
+      const res = await fetch(`${API_BASE_URL}/api/user-plants`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -117,7 +118,7 @@ export default function YourComp() {
   async function handleDelete(id) {
     if (!token) return;
     try {
-      await fetch(`http://localhost:5000/api/user-plants/${id}`, {
+      await fetch(`${API_BASE_URL}/api/user-plants/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -134,7 +135,7 @@ export default function YourComp() {
     if (!token) return;
     const today = new Date().toISOString().split("T")[0];
     try {
-      await fetch(`http://localhost:5000/api/user-plants/${id}/water`, {
+      await fetch(`${API_BASE_URL}/api/user-plants/${id}/water`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` }
       });
