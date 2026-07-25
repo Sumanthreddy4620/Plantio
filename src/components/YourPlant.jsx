@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import YourComp from "./YourComp";
 
-export default function Plants() {
+export default function YourPlant() {
   return (
     <main>
       <div className="FirstComp">

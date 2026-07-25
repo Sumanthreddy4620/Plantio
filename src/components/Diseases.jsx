@@ -5,10 +5,6 @@ import DisComp from "./Discomp";
 export default function Diseases() {
   const [searchText, setSearchText] = useState("");
 
-  function handleSubmit(e) {
-    e.preventDefault();
-  }
-
   return (
     <>
       <main>
@@ -30,7 +26,7 @@ export default function Diseases() {
 
           {/* Right: search */}
           <div className="FirstComp-search">
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={(e) => e.preventDefault()}>
               <input
                 className="bar"
                 placeholder="Find a problem by name…"
@@ -38,9 +34,9 @@ export default function Diseases() {
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
               />
-              <input type="submit" className="but" value="🔍︎" />
+              <button type="submit" className="but">🔍︎</button>
             </form>
-            <span>Search diseases & pests</span>
+            <span>Search 740+ diseases & pests</span>
           </div>
         </div>
       </main>

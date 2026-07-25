@@ -5,10 +5,6 @@ import Comp from "./Comp";
 export default function Plants() {
   const [searchText, setSearchText] = useState("");
 
-  function handleSubmit(e) {
-    e.preventDefault();
-  }
-
   return (
     <main>
       <div className="FirstComp">
@@ -27,7 +23,7 @@ export default function Plants() {
 
         {/* Right: search */}
         <div className="FirstComp-search">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={(e) => e.preventDefault()}>
             <input
               className="bar"
               placeholder="Find a plant by name…"
@@ -35,9 +31,9 @@ export default function Plants() {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
             />
-            <input type="submit" className="but" value="🔍︎" />
+            <button type="submit" className="but">🔍︎</button>
           </form>
-          <span>Search from 300,00+ plant species</span>
+          <span>Search from 300,000+ plant species</span>
         </div>
       </div>
 

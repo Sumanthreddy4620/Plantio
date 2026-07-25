@@ -5,10 +5,6 @@ import Comp from "./Blogcomp";
 export default function Blog() {
   const [searchText, setSearchText] = useState("");
 
-  function handleSubmit(e) {
-    e.preventDefault();
-  }
-
   return (
     <main>
       <div className="FirstComp">
@@ -26,7 +22,7 @@ export default function Blog() {
 
         {/* Right: search */}
         <div className="FirstComp-search">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={(e) => e.preventDefault()}>
             <input
               className="bar"
               placeholder="Search articles…"
@@ -34,9 +30,9 @@ export default function Blog() {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
             />
-            <input type="submit" className="but" value="🔍︎" />
+            <button type="submit" className="but">🔍︎</button>
           </form>
-          <span>Browse plant care tips & guides</span>
+          <span>Browse botanical guides & care tips</span>
         </div>
       </div>
 
