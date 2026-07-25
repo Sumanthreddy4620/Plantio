@@ -141,10 +141,10 @@ export default function PlantDetail() {
             fontWeight: 800,
           }}
         >
-          📦 {plant.category}
+          📦 {(!plant.category || plant.category === "Plantae") ? "Flowers" : plant.category}
         </span>
 
-        {/* Origin country if available (Perenual plants) */}
+        {/* Origin country if available */}
         {plant.originCountry && (
           <span
             style={{
@@ -163,8 +163,9 @@ export default function PlantDetail() {
 
         {/* Description */}
         <p className="detail-desc">
-          {plant.description ||
-            `${plant.title} (${plant.text}) is a remarkable plant with unique characteristics. Learn how to care for it and keep it thriving.`}
+          {plant.description
+            ? plant.description.replace(/<[^>]*>/g, '')
+            : `${plant.title} (${plant.text}) is a remarkable plant with unique characteristics. Learn how to care for it and keep it thriving.`}
         </p>
 
         {/* Care cards */}

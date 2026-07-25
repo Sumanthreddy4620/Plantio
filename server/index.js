@@ -209,12 +209,12 @@ const server = http.createServer(async (req, res) => {
             ? detail.preferred_common_name.charAt(0).toUpperCase() + detail.preferred_common_name.slice(1)
             : detail.name,
           text: detail.name || '',
-          category: detail.iconic_taxon_name || 'Plant',
+          category: getPlantCategory(detail),
           img: {
             src: detail.default_photo?.medium_url || null,
             alt: detail.preferred_common_name || detail.name || 'Plant'
           },
-          description: detail.wikipedia_summary || null,
+          description: detail.wikipedia_summary ? detail.wikipedia_summary.replace(/<[^>]*>/g, '') : null,
           watering: 'Regular',
           light: 'Varies by species',
           soil: 'Well-draining',
