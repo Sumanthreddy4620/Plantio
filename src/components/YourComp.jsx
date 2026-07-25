@@ -460,10 +460,45 @@ export default function YourComp() {
         </div>
       )}
 
-      {/* Header Info */}
+      {/* Header Info & Botanical Dashboard */}
       <div style={{ padding: "24px 24px 0", maxWidth: "1200px", width: "100%" }}>
-        <p className="SlidePanel-your">
-          {user.firstName}'s Plants ({entries.length})
+        <div className="your-dashboard-bar">
+          <div className="your-dashboard-card">
+            <span className="your-dash-icon">🪴</span>
+            <div>
+              <span className="your-dash-label">My Collection</span>
+              <strong className="your-dash-val">{entries.length} Plants</strong>
+            </div>
+          </div>
+
+          <div className="your-dashboard-card">
+            <span className="your-dash-icon">💧</span>
+            <div>
+              <span className="your-dash-label">Watering Status</span>
+              <strong className="your-dash-val">
+                {entries.filter(e => {
+                  const freq = Number(e.wateringFrequency || 7);
+                  const last = new Date(e.lastWatered || Date.now());
+                  const diffDays = Math.floor((Date.now() - last.getTime()) / (1000 * 3600 * 24));
+                  return diffDays >= freq;
+                }).length} Need Water Today
+              </strong>
+            </div>
+          </div>
+
+          <Link to="/diseases" className="your-dashboard-card link-card">
+            <span className="your-dash-icon">🩺</span>
+            <div>
+              <span className="your-dash-label">Plant Health</span>
+              <strong className="your-dash-val" style={{ color: "var(--primary-dark)" }}>
+                Diagnose Problems →
+              </strong>
+            </div>
+          </Link>
+        </div>
+
+        <p className="SlidePanel-your" style={{ marginTop: "24px" }}>
+          {user.firstName}'s Plant Garden ({entries.length})
         </p>
       </div>
 
@@ -476,23 +511,110 @@ export default function YourComp() {
           ⚠ {error}
         </div>
       ) : (
-        <article className="plant-grid" style={{ padding: "0 24px 48px" }}>
-          {entries.map((entry) => (
-            <YourGrid
-              key={entry.id}
-              entry={entry}
-              onDelete={() => handleDelete(entry.id)}
-              onWater={() => handleWater(entry.id)}
-              onEdit={() => startEdit(entry)}
-            />
-          ))}
+        <div style={{ padding: "0 24px 48px", maxWidth: "1200px", width: "100%" }}>
+          <article className="plant-grid">
+            {entries.map((entry) => (
+              <YourGrid
+                key={entry.id}
+                entry={entry}
+                onDelete={() => handleDelete(entry.id)}
+                onWater={() => handleWater(entry.id)}
+                onEdit={() => startEdit(entry)}
+              />
+            ))}
 
-          {/* Add card */}
-          <div className="your-add-entry" onClick={() => setShowForm(true)}>
-            <div className="Add-div" style={{ pointerEvents: "none" }}>+</div>
-            <span>Add a plant</span>
-          </div>
-        </article>
+            {/* Add card */}
+            <div className="your-add-entry" onClick={() => setShowForm(true)}>
+              <div className="Add-div" style={{ pointerEvents: "none" }}>+</div>
+              <span style={{ fontWeight: 800 }}>Add a Plant</span>
+              <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "4px" }}>
+                Upload photo & set watering schedule
+              </span>
+            </div>
+          </article>
+
+          {/* If 0 plants, show rich starter plants & plant problem shortcuts */}
+          {entries.length === 0 && (
+            <div className="empty-garden-starter">
+              <h3>🌱 Start Building Your Plant Collection</h3>
+              <p>Add popular houseplants to your garden or diagnose plant health problems:</p>
+
+              <div className="starter-plants-grid">
+                <div className="starter-card">
+                  <img src="https://images.unsplash.com/photo-1614594975525-e45190c55d0b?w=400&q=80" alt="Monstera" />
+                  <h4>Monstera Deliciosa</h4>
+                  <span>Swiss Cheese Plant • Water every 7 days</span>
+                  <button
+                    className="starter-add-btn"
+                    onClick={() => {
+                      setFormData({
+                        title: "Monstera Deliciosa",
+                        text: "Requires bright indirect light and watering every 7 days.",
+                        imgUrl: "https://images.unsplash.com/photo-1614594975525-e45190c55d0b?w=400&q=80",
+                        wateringFrequency: "7",
+                        lastWatered: new Date().toISOString().split("T")[0]
+                      });
+                      setShowForm(true);
+                    }}
+                  >
+                    ➕ Quick Add
+                  </button>
+                </div>
+
+                <div className="starter-card">
+                  <img src="https://images.unsplash.com/photo-1593482892290-f54927ae1bac?w=400&q=80" alt="Snake Plant" />
+                  <h4>Snake Plant</h4>
+                  <span>Sansevieria • Water every 14 days</span>
+                  <button
+                    className="starter-add-btn"
+                    onClick={() => {
+                      setFormData({
+                        title: "Snake Plant",
+                        text: "Low maintenance air purifier. Water every 14 days.",
+                        imgUrl: "https://images.unsplash.com/photo-1593482892290-f54927ae1bac?w=400&q=80",
+                        wateringFrequency: "14",
+                        lastWatered: new Date().toISOString().split("T")[0]
+                      });
+                      setShowForm(true);
+                    }}
+                  >
+                    ➕ Quick Add
+                  </button>
+                </div>
+
+                <div className="starter-card">
+                  <img src="https://images.unsplash.com/photo-1597848212624-a19eb35e2651?w=400&q=80" alt="Peace Lily" />
+                  <h4>Peace Lily</h4>
+                  <span>Spathiphyllum • Water every 3 days</span>
+                  <button
+                    className="starter-add-btn"
+                    onClick={() => {
+                      setFormData({
+                        title: "Peace Lily",
+                        text: "Loves moist soil and shade. Water every 3 days.",
+                        imgUrl: "https://images.unsplash.com/photo-1597848212624-a19eb35e2651?w=400&q=80",
+                        wateringFrequency: "3",
+                        lastWatered: new Date().toISOString().split("T")[0]
+                      });
+                      setShowForm(true);
+                    }}
+                  >
+                    ➕ Quick Add
+                  </button>
+                </div>
+              </div>
+
+              <div className="empty-garden-actions">
+                <Link to="/plants" className="empty-action-btn primary">
+                  🌿 Browse 300,000+ Plant Catalog →
+                </Link>
+                <Link to="/diseases" className="empty-action-btn secondary">
+                  🩺 Identify & Fix Plant Problems →
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
