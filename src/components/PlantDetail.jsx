@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import dataPlant from "./data-plant";
 import API_BASE_URL from "../config";
@@ -7,6 +7,7 @@ const PLACEHOLDER = "https://images.unsplash.com/photo-1416879595882-3373a0480b5
 
 export default function PlantDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const isLiveId = id && id.startsWith("perenual_");
 
   // For local plants (numeric IDs), find immediately
@@ -15,6 +16,8 @@ export default function PlantDetail() {
   const [plant, setPlant] = useState(localPlant || null);
   const [loading, setLoading] = useState(isLiveId);
   const [error, setError] = useState(null);
+  const [addStatus, setAddStatus] = useState(null); // null | "adding" | "added" | "error" | "login"
+
 
   useEffect(() => {
     if (!isLiveId) return;
@@ -40,6 +43,37 @@ export default function PlantDetail() {
 
     return () => { cancelled = true; };
   }, [id, isLiveId]);
+
+  async function handleAddToGarden() {
+    const token = localStorage.getItem("plantio_token");
+    if (!token) {
+      setAddStatus("login");
+      setTimeout(() => navigate("/login"), 1500);
+      return;
+    }
+    setAddStatus("adding");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/user-plants`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: plant.title,
+          text: plant.text || "",
+          imgUrl: plant.img?.src || "",
+          wateringFrequency: 7,
+          lastWatered: new Date().toISOString().split("T")[0]
+        })
+      });
+      if (!res.ok) throw new Error("Failed");
+      setAddStatus("added");
+    } catch {
+      setAddStatus("error");
+      setTimeout(() => setAddStatus(null), 3000);
+    }
+  }
 
   if (loading) {
     return (
@@ -170,9 +204,28 @@ export default function PlantDetail() {
           <p style={{ color: "var(--text-muted)", marginBottom: "16px", fontSize: "0.95rem" }}>
             Add it to Your Plants to track watering, set reminders, and keep notes.
           </p>
-          <Link to="/your-plants" className="potd-link">
-            Add to My Garden →
-          </Link>
+
+          {addStatus === "added" ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ background: "var(--primary)", color: "#fff", borderRadius: "30px", padding: "10px 24px", fontWeight: 700, fontSize: "0.92rem" }}>
+                ✅ Added to My Garden!
+              </span>
+              <Link to="/your-plants" style={{ color: "var(--primary)", fontWeight: 700, fontSize: "0.9rem" }}>
+                View My Garden →
+              </Link>
+            </div>
+          ) : addStatus === "login" ? (
+            <span style={{ color: "#f59e0b", fontWeight: 700 }}>🔐 Redirecting to login...</span>
+          ) : (
+            <button
+              onClick={handleAddToGarden}
+              disabled={addStatus === "adding"}
+              className="potd-link"
+              style={{ border: "none", cursor: addStatus === "adding" ? "not-allowed" : "pointer", opacity: addStatus === "adding" ? 0.7 : 1 }}
+            >
+              {addStatus === "adding" ? "Adding..." : addStatus === "error" ? "❌ Try again" : "Add to My Garden →"}
+            </button>
+          )}
         </div>
 
         <Link to="/plants" className="back-btn" style={{ marginTop: "32px", display: "inline-flex" }}>

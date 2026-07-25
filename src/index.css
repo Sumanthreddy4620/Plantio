@@ -1004,6 +1004,32 @@ aside {
 
 .plant-entry:hover .main-image, .Blog-entry:hover .main-image { transform: scale(1.06); }
 
+/* Image load failure — show alt text */
+.main-image-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e6faf5 0%, #c8ead8 100%);
+  gap: 6px;
+  padding: 12px;
+}
+.main-image-fallback-icon { font-size: 2rem; line-height: 1; }
+.main-image-fallback-text {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  text-align: center;
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+
 .main-name { margin: 12px 14px 4px; font-size: 0.98rem; font-weight: 800; color: var(--text); }
 .main-name-info { margin: 0 14px 10px; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
 

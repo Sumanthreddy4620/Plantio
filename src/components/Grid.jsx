@@ -1,20 +1,26 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-
-const PLACEHOLDER =
-  "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80";
 
 export default function Grid({ img, title, text, id, category, detailPath }) {
   const path = detailPath || "/plants";
+  const [imgFailed, setImgFailed] = useState(false);
 
   const inner = (
     <>
       <div className="main-image-container">
-        <img
-          className="main-image"
-          src={img.src}
-          alt={img.alt}
-          onError={(e) => { e.target.src = PLACEHOLDER; }}
-        />
+        {imgFailed ? (
+          <div className="main-image-fallback">
+            <span className="main-image-fallback-icon">🌿</span>
+            <span className="main-image-fallback-text">{img?.alt || title}</span>
+          </div>
+        ) : (
+          <img
+            className="main-image"
+            src={img?.src}
+            alt={img?.alt}
+            onError={() => setImgFailed(true)}
+          />
+        )}
       </div>
       <h3 className="main-name">{title}</h3>
       <p className="main-name-info">{text}</p>
