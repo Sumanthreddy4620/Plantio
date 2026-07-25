@@ -197,6 +197,127 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // ── 0c. iNaturalist PLANT DISEASES & PESTS PROXY ──
+    if (pathname === '/api/external-diseases' && req.method === 'GET') {
+      const page = Number(url.searchParams.get('page') || '1');
+      const search = url.searchParams.get('search') || '';
+      const category = url.searchParams.get('category') || 'All';
+      const perPage = 24;
+
+      // Determine query search term
+      let queryTerm = search;
+      if (!queryTerm) {
+        if (category === 'Pest') queryTerm = 'pest insect';
+        else if (category === 'Disease') queryTerm = 'fungus disease spot';
+        else queryTerm = 'plant disease pest';
+      }
+
+      const inatUrl = `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams({
+        q: queryTerm,
+        per_page: perPage,
+        page: page,
+        locale: 'en',
+        preferred_place_id: 1
+      });
+
+      try {
+        const inatRes = await fetch(inatUrl, {
+          headers: { 'Accept': 'application/json', 'User-Agent': 'Plantio/1.0' }
+        });
+        const inatData = await inatRes.json();
+
+        if (inatData && Array.isArray(inatData.results)) {
+          const mappedDiseases = inatData.results
+            .filter(item => item.preferred_common_name || item.name)
+            .map(item => {
+              const commonName = item.preferred_common_name
+                ? item.preferred_common_name.charAt(0).toUpperCase() + item.preferred_common_name.slice(1)
+                : item.name;
+              const isPest = (item.iconic_taxon_name === 'Insecta' || item.iconic_taxon_name === 'Arachnida' || commonName.toLowerCase().includes('bug') || commonName.toLowerCase().includes('aphid') || commonName.toLowerCase().includes('mite') || commonName.toLowerCase().includes('beetle'));
+              const catLabel = isPest ? 'Pest' : 'Disease';
+
+              return {
+                id: `dis_inat_${item.id}`,
+                title: commonName,
+                text: item.name ? `Scientific name: ${item.name}` : 'Common plant issue',
+                category: catLabel,
+                severity: isPest ? 'Medium' : 'High',
+                img: {
+                  src: item.default_photo?.medium_url || null,
+                  alt: commonName
+                },
+                symptoms: item.wikipedia_summary || `Noticeable discoloration, spots, or damage associated with ${commonName}. Inspect affected leaves and stems closely.`,
+                treatment: isPest
+                  ? `Spray affected foliage with neem oil or insecticidal soap. Isolate plant and manually remove visible pests.`
+                  : `Prune severely infected leaves. Apply copper-based fungicide or neem oil solution. Improve airflow around the plant.`,
+                prevention: `Inspect plants weekly, avoid overhead watering, ensure proper spacing, and maintain clean potting soil.`,
+                wikipediaUrl: item.wikipedia_url || null
+              };
+            });
+
+          const totalResults = inatData.total_results || 0;
+          const lastPage = Math.ceil(totalResults / perPage);
+
+          return sendJson(200, {
+            total: totalResults,
+            lastPage,
+            page,
+            diseases: mappedDiseases
+          });
+        }
+
+        return sendJson(500, { error: 'Unexpected iNaturalist disease API response.' });
+      } catch (err) {
+        return sendJson(500, { error: `Disease API error: ${err.message}` });
+      }
+    }
+
+    // ── 0d. SINGLE PLANT DISEASE/PEST DETAIL PROXY ──
+    if (pathname.startsWith('/api/external-diseases/') && req.method === 'GET') {
+      const rawId = pathname.split('/')[3];
+      const numericId = rawId.startsWith('dis_inat_') ? rawId.replace('dis_inat_', '') : rawId;
+
+      try {
+        const detailRes = await fetch(
+          `https://api.inaturalist.org/v1/taxa/${numericId}`,
+          { headers: { 'Accept': 'application/json', 'User-Agent': 'Plantio/1.0' } }
+        );
+        const detailData = await detailRes.json();
+        const detail = detailData.results?.[0];
+
+        if (!detail) {
+          return sendJson(404, { error: 'Problem not found in API.' });
+        }
+
+        const commonName = detail.preferred_common_name
+          ? detail.preferred_common_name.charAt(0).toUpperCase() + detail.preferred_common_name.slice(1)
+          : detail.name;
+        const isPest = (detail.iconic_taxon_name === 'Insecta' || detail.iconic_taxon_name === 'Arachnida' || commonName.toLowerCase().includes('bug') || commonName.toLowerCase().includes('aphid') || commonName.toLowerCase().includes('mite') || commonName.toLowerCase().includes('beetle'));
+
+        const disease = {
+          id: `dis_inat_${detail.id}`,
+          title: commonName,
+          text: detail.name ? `Scientific classification: ${detail.name}` : 'Plant problem details',
+          category: isPest ? 'Pest' : 'Disease',
+          severity: isPest ? 'Medium' : 'High',
+          img: {
+            src: detail.default_photo?.medium_url || null,
+            alt: commonName
+          },
+          symptoms: detail.wikipedia_summary || `Symptoms include visible structural damage, spots, or abnormal growth patterns caused by ${commonName}.`,
+          treatment: isPest
+            ? `Apply organic insecticidal soap or neem oil spray. Quarantine affected plant and gently wipe leaves with a moist cloth.`
+            : `Remove heavily infected foliage immediately. Spray with copper-based or sulfur-based fungicide. Ensure foliage dries quickly after watering.`,
+          prevention: `Maintain good airflow, avoid water pooling on leaves, use clean pots, and isolate new plants before introducing them to your garden.`,
+          wikipediaUrl: detail.wikipedia_url || null
+        };
+
+        return sendJson(200, { disease });
+      } catch (err) {
+        return sendJson(500, { error: `Disease detail API error: ${err.message}` });
+      }
+    }
+
     // ── 1. SIGNUP ──
     if (pathname === '/api/signup' && req.method === 'POST') {
       const body = await getJsonBody(req);

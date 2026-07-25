@@ -1,18 +1,64 @@
 import { useParams, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import dataDis from "./data-prob";
+import API_BASE_URL from "../config";
 
 const PLACEHOLDER = "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=900&q=80";
 
 export default function DiseaseDetail() {
   const { id } = useParams();
-  const disease = dataDis.find((d) => d.id === Number(id));
+  const isLiveId = id && String(id).startsWith("dis_");
 
-  if (!disease) {
+  const localDisease = !isLiveId ? dataDis.find((d) => d.id === Number(id)) : null;
+
+  const [disease, setDisease] = useState(localDisease || null);
+  const [loading, setLoading] = useState(isLiveId);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!isLiveId) return;
+
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    fetch(`${API_BASE_URL}/api/external-diseases/${id}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Problem detail not found");
+        return res.json();
+      })
+      .then((data) => {
+        if (!cancelled) setDisease(data.disease);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [id, isLiveId]);
+
+  if (loading) {
+    return (
+      <div className="disease-detail">
+        <div className="detail-body" style={{ textAlign: "center", paddingTop: "80px" }}>
+          <p style={{ fontSize: "3rem" }}>🔬</p>
+          <h2>Loading problem details...</h2>
+          <p style={{ color: "var(--text-muted)" }}>Connecting to live database</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !disease) {
     return (
       <div className="disease-detail">
         <div className="detail-body" style={{ textAlign: "center", paddingTop: "80px" }}>
           <p style={{ fontSize: "3rem" }}>🔍</p>
           <h2>Problem not found</h2>
+          <p style={{ color: "var(--text-muted)", marginBottom: "20px" }}>{error || "This issue could not be loaded."}</p>
           <Link to="/diseases" className="back-btn" style={{ marginTop: "20px", display: "inline-flex" }}>
             ← Back to Problems
           </Link>
@@ -26,8 +72,8 @@ export default function DiseaseDetail() {
       {/* Hero */}
       <div className="detail-hero">
         <img
-          src={disease.img.src}
-          alt={disease.img.alt}
+          src={disease.img?.src || PLACEHOLDER}
+          alt={disease.img?.alt || disease.title}
           onError={(e) => { e.target.src = PLACEHOLDER; }}
         />
         <div className="detail-hero-text">
@@ -60,7 +106,7 @@ export default function DiseaseDetail() {
             fontWeight: 800,
           }}
         >
-          {disease.category === "Pest" ? "🐛" : "🦠"} {disease.category}
+          {disease.category === "Pest" ? "🐛" : "🦠"} {disease.category || "Disease"}
         </span>
 
         {/* Description */}
@@ -84,7 +130,27 @@ export default function DiseaseDetail() {
           <p>{disease.prevention || "Maintain good plant hygiene, ensure proper spacing for air circulation, and inspect plants regularly to catch problems early."}</p>
         </div>
 
-        <Link to="/diseases" className="back-btn" style={{ marginTop: "12px", display: "inline-flex" }}>
+        {disease.wikipediaUrl && (
+          <div style={{ marginTop: "24px" }}>
+            <a
+              href={disease.wikipediaUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: "var(--primary)",
+                fontWeight: 700,
+                fontSize: "0.9rem",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px"
+              }}
+            >
+              📖 Read complete scientific entry on Wikipedia →
+            </a>
+          </div>
+        )}
+
+        <Link to="/diseases" className="back-btn" style={{ marginTop: "24px", display: "inline-flex" }}>
           ← Back to Problems
         </Link>
       </div>
