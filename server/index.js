@@ -90,132 +90,113 @@ const server = http.createServer(async (req, res) => {
   };
 
   try {
-    // ── 0a. EXTERNAL PERENUAL API PROXY (list + search) ──
+    // ── 0a. iNaturalist PLANT CATALOG PROXY (list + search) ──
+    // No API key required. Rate limit: 100 req/min (not per day).
     if (pathname === '/api/external-plants' && req.method === 'GET') {
-      const apiKey = process.env.PERENUAL_API_KEY;
-      if (!apiKey) {
-        return sendJson(400, { error: 'Perenual API key not configured on server.' });
-      }
-
-      // Helper: detect paywall / upgrade-plan items from free tier
-      const isPaywalled = (item) => {
-        const sciName = Array.isArray(item.scientific_name)
-          ? item.scientific_name.join(' ')
-          : (item.scientific_name || '');
-        if (sciName.toLowerCase().includes('upgrade') || sciName.toLowerCase().includes('i\'m sorry')) return true;
-        const imgSrc = item.default_image?.medium_url || item.default_image?.regular_url || '';
-        // Perenual replaces paywalled images with this upgrade-plan image
-        if (imgSrc.includes('upgrade_plans') || imgSrc.includes('subscription-api-pricing')) return true;
-        return false;
-      };
-
-      // Helper: check if an image URL is the repeated paywall/placeholder image
-      const isPaywallImage = (url) => {
-        if (!url) return true;
-        if (url.includes('upgrade_plans') || url.includes('subscription-api-pricing')) return true;
-        return false;
-      };
-
-      const page = url.searchParams.get('page') || '1';
+      const page = Number(url.searchParams.get('page') || '1');
       const search = url.searchParams.get('search') || '';
-      const perenualUrl = `https://perenual.com/api/species-list?key=${apiKey}&page=${page}${search ? `&q=${encodeURIComponent(search)}` : ''}`;
+      const perPage = 30;
+
+      // iNaturalist taxa endpoint — filter to Plantae kingdom (id 47126)
+      const inatUrl = `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams({
+        q: search || 'plant',
+        rank: 'species',
+        iconic_taxa: 'Plantae',
+        per_page: perPage,
+        page: page,
+        locale: 'en',
+        preferred_place_id: 1 // worldwide
+      });
 
       try {
-        const perenualRes = await fetch(perenualUrl);
-        const perenualData = await perenualRes.json();
+        const inatRes = await fetch(inatUrl, {
+          headers: { 'Accept': 'application/json', 'User-Agent': 'Plantio/1.0' }
+        });
+        const inatData = await inatRes.json();
 
-        if (perenualData && Array.isArray(perenualData.data)) {
-          // Filter out paywalled items before mapping
-          const visibleItems = perenualData.data.filter((item) => !isPaywalled(item));
-
-          const mappedPlants = visibleItems.map((item) => {
-            const imgSrc = item.default_image?.medium_url || item.default_image?.regular_url || null;
-            return {
-              id: `perenual_${item.id}`,
-              title: item.common_name
-                ? item.common_name.charAt(0).toUpperCase() + item.common_name.slice(1)
-                : (item.scientific_name?.[0] || 'Unknown Plant'),
-              text: Array.isArray(item.scientific_name)
-                ? item.scientific_name.join(', ')
-                : (item.scientific_name || ''),
-              category: item.cycle || 'Perennial',
+        if (inatData && Array.isArray(inatData.results)) {
+          const mappedPlants = inatData.results
+            .filter(item => item.preferred_common_name) // only include plants with common names
+            .map(item => ({
+              id: `inat_${item.id}`,
+              title: item.preferred_common_name
+                ? item.preferred_common_name.charAt(0).toUpperCase() + item.preferred_common_name.slice(1)
+                : item.name,
+              text: item.name || '',
+              category: item.iconic_taxon_name || 'Plant',
               img: {
-                // If image is paywalled or missing, set src to null so frontend shows alt text
-                src: isPaywallImage(imgSrc) ? null : imgSrc,
-                alt: item.common_name || 'Plant'
+                src: item.default_photo?.medium_url || null,
+                alt: item.preferred_common_name || item.name || 'Plant'
               },
-              watering: item.watering || 'Regular',
-              light: Array.isArray(item.sunlight) ? item.sunlight.join(', ') : (item.sunlight || 'Indirect light'),
+              watering: 'Regular',
+              light: 'Varies by species',
               difficulty: 'Moderate',
-              toxicity: 'Check plant label'
-            };
-          });
+              toxicity: 'Check plant label',
+              description: item.wikipedia_summary || null,
+              wikipediaUrl: item.wikipedia_url || null
+            }));
+
+          const totalResults = inatData.total_results || 0;
+          const lastPage = Math.ceil(totalResults / perPage);
 
           return sendJson(200, {
-            total: perenualData.total,
-            lastPage: perenualData.last_page,
-            page: Number(page),
+            total: totalResults,
+            lastPage,
+            page,
             plants: mappedPlants
           });
         }
 
-        return sendJson(500, {
-          error: 'Unexpected Perenual API response format.',
-          detail: perenualData?.error || perenualData?.message || JSON.stringify(perenualData).slice(0, 200)
-        });
+        return sendJson(500, { error: 'Unexpected iNaturalist API response.' });
       } catch (err) {
-        return sendJson(500, { error: `Perenual API error: ${err.message}` });
+        return sendJson(500, { error: `iNaturalist API error: ${err.message}` });
       }
     }
 
-    // ── 0b. EXTERNAL PERENUAL SINGLE PLANT DETAIL ──
+    // ── 0b. iNaturalist SINGLE PLANT DETAIL ──
     if (pathname.startsWith('/api/external-plants/') && req.method === 'GET') {
-      const apiKey = process.env.PERENUAL_API_KEY;
-      if (!apiKey) {
-        return sendJson(400, { error: 'Perenual API key not configured on server.' });
-      }
-
-      const rawId = pathname.split('/')[3]; // e.g. "perenual_42"
-      const numericId = rawId.startsWith('perenual_') ? rawId.replace('perenual_', '') : rawId;
+      const rawId = pathname.split('/')[3]; // e.g. "inat_12345"
+      const numericId = rawId.startsWith('inat_') ? rawId.replace('inat_', '') : rawId;
 
       try {
-        const detailRes = await fetch(`https://perenual.com/api/species/details/${numericId}?key=${apiKey}`);
-        const detail = await detailRes.json();
+        const detailRes = await fetch(
+          `https://api.inaturalist.org/v1/taxa/${numericId}`,
+          { headers: { 'Accept': 'application/json', 'User-Agent': 'Plantio/1.0' } }
+        );
+        const detailData = await detailRes.json();
+        const detail = detailData.results?.[0];
 
-        if (!detail || detail.error) {
-          return sendJson(404, { error: 'Plant not found in Perenual API.' });
+        if (!detail) {
+          return sendJson(404, { error: 'Plant not found in iNaturalist.' });
         }
 
         const plant = {
-          id: `perenual_${detail.id}`,
-          title: detail.common_name
-            ? detail.common_name.charAt(0).toUpperCase() + detail.common_name.slice(1)
-            : (detail.scientific_name?.[0] || 'Unknown Plant'),
-          text: Array.isArray(detail.scientific_name)
-            ? detail.scientific_name.join(', ')
-            : (detail.scientific_name || ''),
-          category: detail.cycle || 'Perennial',
+          id: `inat_${detail.id}`,
+          title: detail.preferred_common_name
+            ? detail.preferred_common_name.charAt(0).toUpperCase() + detail.preferred_common_name.slice(1)
+            : detail.name,
+          text: detail.name || '',
+          category: detail.iconic_taxon_name || 'Plant',
           img: {
-            src: detail.default_image?.medium_url
-              || detail.default_image?.regular_url
-              || 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80',
-            alt: detail.common_name || 'Plant'
+            src: detail.default_photo?.medium_url || null,
+            alt: detail.preferred_common_name || detail.name || 'Plant'
           },
-          description: detail.description || null,
-          watering: detail.watering || 'Regular',
-          light: Array.isArray(detail.sunlight) ? detail.sunlight.join(', ') : (detail.sunlight || 'Indirect light'),
-          soil: detail.soil ? (Array.isArray(detail.soil) ? detail.soil.join(', ') : detail.soil) : 'Well-draining',
-          difficulty: detail.care_level || 'Moderate',
-          toxicity: detail.poisonous_to_humans ? 'Toxic to humans' : (detail.poisonous_to_pets ? 'Toxic to pets' : 'Non-toxic'),
-          height: detail.dimension || null,
-          originCountry: Array.isArray(detail.origin) ? detail.origin.join(', ') : null,
+          description: detail.wikipedia_summary || null,
+          watering: 'Regular',
+          light: 'Varies by species',
+          soil: 'Well-draining',
+          difficulty: 'Moderate',
+          toxicity: 'Check plant label',
+          height: null,
+          wikipediaUrl: detail.wikipedia_url || null,
         };
 
         return sendJson(200, { plant });
       } catch (err) {
-        return sendJson(500, { error: `Perenual detail API error: ${err.message}` });
+        return sendJson(500, { error: `iNaturalist detail API error: ${err.message}` });
       }
     }
+
     // ── 1. SIGNUP ──
     if (pathname === '/api/signup' && req.method === 'POST') {
       const body = await getJsonBody(req);

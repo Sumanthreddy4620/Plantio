@@ -43,6 +43,7 @@ export default function Comp({ searchText }) {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [usingFallback, setUsingFallback] = useState(false);
+  const [fallbackReason, setFallbackReason] = useState("");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(null);
@@ -76,6 +77,13 @@ export default function Comp({ searchText }) {
       const query = buildSearchQuery(selectedCategory, debouncedSearch);
       const searchParam = query ? `&search=${encodeURIComponent(query)}` : "";
       const res = await fetch(`${API_BASE_URL}/api/external-plants?page=${pageNum}${searchParam}`);
+
+      // Rate limit hit — fall back to local data gracefully
+      if (res.status === 429) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Rate limit reached");
+      }
+
       if (!res.ok) throw new Error("API unavailable");
       const data = await res.json();
 
@@ -86,7 +94,7 @@ export default function Comp({ searchText }) {
       setTotalCount(data.total || null);
       setHasMore(pageNum < (data.lastPage || 1));
       setUsingFallback(false);
-    } catch {
+    } catch (err) {
       if (!isMounted.current) return;
       if (isReset) {
         // Fallback: filter local dataset by category + search
@@ -100,6 +108,7 @@ export default function Comp({ searchText }) {
         setTotalCount(filtered.length);
         setHasMore(false);
         setUsingFallback(true);
+        setFallbackReason(err.message || "Live API unavailable");
       }
     } finally {
       if (isMounted.current) {
@@ -109,6 +118,7 @@ export default function Comp({ searchText }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, selectedCategory, buildSearchQuery]);
+
 
   const handleLoadMore = () => {
     const nextPage = page + 1;
@@ -149,7 +159,7 @@ export default function Comp({ searchText }) {
           <div style={{ width: "100%", marginBottom: "4px" }}>
             {usingFallback ? (
               <p style={{ color: "#f59e0b", fontWeight: 600, fontSize: "0.82rem" }}>
-                ⚠️ Showing {plants.length} local plants (live API unavailable)
+                ⚠️ {fallbackReason || "Showing local plants (live API unavailable)"}
               </p>
             ) : totalCount !== null ? (
               <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
