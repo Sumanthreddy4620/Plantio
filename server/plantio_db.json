@@ -1,0 +1,15 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "firstName": "Sumanth Reddy",
+      "lastName": "Kasireddy",
+      "email": "k.sumanthreddy4620@gmail.com",
+      "password": "26c44f1d1bd2ad1f0811abe6ef531999f3845f7c0f8f3904adbb7eef1fa10a64becef75f10131da8c93f2421bc50eabf160cab1e238e1bd76340bc72334aae74",
+      "createdAt": "2026-07-25T11:49:14.038Z"
+    }
+  ],
+  "user_plants": [],
+  "nextUserId": 2,
+  "nextPlantId": 2
+}
