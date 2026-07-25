@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 
 export default function Grid({ img, title, text, id, category, detailPath }) {
   const path = detailPath || "/plants";
-  const [imgFailed, setImgFailed] = useState(false);
+  // If src is null/empty, immediately show the text fallback (no broken img request)
+  const [imgFailed, setImgFailed] = useState(!img?.src);
+
 
   const inner = (
     <>

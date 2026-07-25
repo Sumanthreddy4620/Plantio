@@ -97,6 +97,25 @@ const server = http.createServer(async (req, res) => {
         return sendJson(400, { error: 'Perenual API key not configured on server.' });
       }
 
+      // Helper: detect paywall / upgrade-plan items from free tier
+      const isPaywalled = (item) => {
+        const sciName = Array.isArray(item.scientific_name)
+          ? item.scientific_name.join(' ')
+          : (item.scientific_name || '');
+        if (sciName.toLowerCase().includes('upgrade') || sciName.toLowerCase().includes('i\'m sorry')) return true;
+        const imgSrc = item.default_image?.medium_url || item.default_image?.regular_url || '';
+        // Perenual replaces paywalled images with this upgrade-plan image
+        if (imgSrc.includes('upgrade_plans') || imgSrc.includes('subscription-api-pricing')) return true;
+        return false;
+      };
+
+      // Helper: check if an image URL is the repeated paywall/placeholder image
+      const isPaywallImage = (url) => {
+        if (!url) return true;
+        if (url.includes('upgrade_plans') || url.includes('subscription-api-pricing')) return true;
+        return false;
+      };
+
       const page = url.searchParams.get('page') || '1';
       const search = url.searchParams.get('search') || '';
       const perenualUrl = `https://perenual.com/api/species-list?key=${apiKey}&page=${page}${search ? `&q=${encodeURIComponent(search)}` : ''}`;
@@ -106,26 +125,31 @@ const server = http.createServer(async (req, res) => {
         const perenualData = await perenualRes.json();
 
         if (perenualData && Array.isArray(perenualData.data)) {
-          const mappedPlants = perenualData.data.map((item) => ({
-            id: `perenual_${item.id}`,
-            title: item.common_name
-              ? item.common_name.charAt(0).toUpperCase() + item.common_name.slice(1)
-              : (item.scientific_name?.[0] || 'Unknown Plant'),
-            text: Array.isArray(item.scientific_name)
-              ? item.scientific_name.join(', ')
-              : (item.scientific_name || ''),
-            category: item.cycle || 'Perennial',
-            img: {
-              src: item.default_image?.medium_url
-                || item.default_image?.regular_url
-                || 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80',
-              alt: item.common_name || 'Plant'
-            },
-            watering: item.watering || 'Regular',
-            light: Array.isArray(item.sunlight) ? item.sunlight.join(', ') : (item.sunlight || 'Indirect light'),
-            difficulty: 'Moderate',
-            toxicity: 'Check plant label'
-          }));
+          // Filter out paywalled items before mapping
+          const visibleItems = perenualData.data.filter((item) => !isPaywalled(item));
+
+          const mappedPlants = visibleItems.map((item) => {
+            const imgSrc = item.default_image?.medium_url || item.default_image?.regular_url || null;
+            return {
+              id: `perenual_${item.id}`,
+              title: item.common_name
+                ? item.common_name.charAt(0).toUpperCase() + item.common_name.slice(1)
+                : (item.scientific_name?.[0] || 'Unknown Plant'),
+              text: Array.isArray(item.scientific_name)
+                ? item.scientific_name.join(', ')
+                : (item.scientific_name || ''),
+              category: item.cycle || 'Perennial',
+              img: {
+                // If image is paywalled or missing, set src to null so frontend shows alt text
+                src: isPaywallImage(imgSrc) ? null : imgSrc,
+                alt: item.common_name || 'Plant'
+              },
+              watering: item.watering || 'Regular',
+              light: Array.isArray(item.sunlight) ? item.sunlight.join(', ') : (item.sunlight || 'Indirect light'),
+              difficulty: 'Moderate',
+              toxicity: 'Check plant label'
+            };
+          });
 
           return sendJson(200, {
             total: perenualData.total,
