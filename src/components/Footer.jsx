@@ -39,12 +39,12 @@ export default function Footer() {
       </div>
 
       <div className="footer-bottom">
-        <p>© 2025 Plantio. All rights reserved. Made with 🌿 for plant lovers.</p>
-        <div className="footer-social">
+        <p>© 2026 Plantio. All rights reserved. Made with 🌿 for plant lovers.</p>
+        {/* <div className="footer-social">
           <a href="#" aria-label="Twitter">𝕏</a>
           <a href="#" aria-label="Instagram">📸</a>
           <a href="#" aria-label="Facebook">f</a>
-        </div>
+        </div> */}
       </div>
     </footer>
   );

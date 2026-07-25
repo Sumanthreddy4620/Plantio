@@ -90,6 +90,50 @@ const server = http.createServer(async (req, res) => {
   };
 
   try {
+    // ── 0. EXTERNAL PERENUAL API PROXY ──
+    if (pathname === '/api/external-plants' && req.method === 'GET') {
+      const apiKey = process.env.PERENUAL_API_KEY || url.searchParams.get('key');
+      if (!apiKey) {
+        return sendJson(400, {
+          error: 'Perenual API key missing. Pass ?key=YOUR_KEY or set PERENUAL_API_KEY environment variable.'
+        });
+      }
+
+      const page = url.searchParams.get('page') || '1';
+      const perenualUrl = `https://perenual.com/api/species-list?key=${apiKey}&page=${page}`;
+
+      try {
+        const perenualRes = await fetch(perenualUrl);
+        const perenualData = await perenualRes.json();
+
+        if (perenualData && Array.isArray(perenualData.data)) {
+          const mappedPlants = perenualData.data.map((item) => ({
+            id: `perenual_${item.id}`,
+            title: item.common_name ? item.common_name.charAt(0).toUpperCase() + item.common_name.slice(1) : (item.scientific_name?.[0] || 'Unknown Plant'),
+            text: Array.isArray(item.scientific_name) ? item.scientific_name.join(', ') : item.scientific_name || '',
+            category: item.cycle || 'Houseplants',
+            img: {
+              src: item.default_image?.medium_url || item.default_image?.regular_url || 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80',
+              alt: item.common_name || 'Plant'
+            },
+            watering: item.watering ? `Watering: ${item.watering}` : 'Regular watering',
+            light: Array.isArray(item.sunlight) ? item.sunlight.join(', ') : item.sunlight || 'Indirect light',
+            difficulty: 'Moderate',
+            toxicity: 'Non-toxic'
+          }));
+
+          return sendJson(200, {
+            total: perenualData.total,
+            page: perenualData.current_page,
+            plants: mappedPlants
+          });
+        }
+
+        return sendJson(500, { error: 'Failed to format Perenual API response.' });
+      } catch (err) {
+        return sendJson(500, { error: `Perenual API Fetch error: ${err.message}` });
+      }
+    }
     // ── 1. SIGNUP ──
     if (pathname === '/api/signup' && req.method === 'POST') {
       const body = await getJsonBody(req);
