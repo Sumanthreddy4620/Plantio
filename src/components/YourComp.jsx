@@ -57,8 +57,10 @@ export default function YourComp() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load plants.");
       setEntries(data.plants || []);
-    } catch (err) {
-      setError(err.message);
+    } catch {
+      // Fallback for Vercel / mobile deployment
+      const saved = JSON.parse(localStorage.getItem("plantio_local_plants") || "[]");
+      setEntries(saved);
     } finally {
       setLoading(false);
     }
@@ -73,6 +75,7 @@ export default function YourComp() {
     e.preventDefault();
     if (!formData.title.trim() || !token) return;
 
+    let newPlant = null;
     try {
       const res = await fetch("http://localhost:5000/api/user-plants", {
         method: "POST",
@@ -84,8 +87,22 @@ export default function YourComp() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to add plant.");
+      newPlant = data.plant;
+    } catch {
+      // Fallback for Vercel / mobile deployment
+      newPlant = {
+        id: Date.now(),
+        ...formData,
+        userId: user?.id || 1,
+        createdAt: new Date().toISOString()
+      };
+      const saved = JSON.parse(localStorage.getItem("plantio_local_plants") || "[]");
+      const updated = [newPlant, ...saved];
+      localStorage.setItem("plantio_local_plants", JSON.stringify(updated));
+    }
 
-      setEntries((prev) => [data.plant, ...prev]);
+    if (newPlant) {
+      setEntries((prev) => [newPlant, ...prev]);
       setFormData({
         title: "",
         text: "",
@@ -94,46 +111,42 @@ export default function YourComp() {
         lastWatered: new Date().toISOString().split("T")[0],
       });
       setShowForm(false);
-    } catch (err) {
-      alert(err.message);
     }
   }
 
   async function handleDelete(id) {
     if (!token) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/user-plants/${id}`, {
+      await fetch(`http://localhost:5000/api/user-plants/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to delete plant.");
-      }
-      setEntries((prev) => prev.filter((e) => e.id !== id));
-    } catch (err) {
-      alert(err.message);
+    } catch {
+      // Fallback for Vercel / mobile deployment
     }
+    const saved = JSON.parse(localStorage.getItem("plantio_local_plants") || "[]");
+    const updated = saved.filter((e) => e.id !== id);
+    localStorage.setItem("plantio_local_plants", JSON.stringify(updated));
+    setEntries((prev) => prev.filter((e) => e.id !== id));
   }
 
   async function handleWater(id) {
     if (!token) return;
+    const today = new Date().toISOString().split("T")[0];
     try {
-      const res = await fetch(`http://localhost:5000/api/user-plants/${id}/water`, {
+      await fetch(`http://localhost:5000/api/user-plants/${id}/water`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` }
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to update watering status.");
-
-      setEntries((prev) =>
-        prev.map((e) =>
-          e.id === id ? { ...e, lastWatered: data.lastWatered } : e
-        )
-      );
-    } catch (err) {
-      alert(err.message);
+    } catch {
+      // Fallback for Vercel / mobile deployment
     }
+    const saved = JSON.parse(localStorage.getItem("plantio_local_plants") || "[]");
+    const updated = saved.map((e) => e.id === id ? { ...e, lastWatered: today } : e);
+    localStorage.setItem("plantio_local_plants", JSON.stringify(updated));
+    setEntries((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, lastWatered: today } : e))
+    );
   }
 
   // If user is not logged in, prompt to log in / sign up
