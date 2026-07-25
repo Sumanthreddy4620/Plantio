@@ -70,6 +70,41 @@ function authenticate(req) {
   }
 }
 
+// Helper to derive human-friendly plant category from search, category param, and item names
+function getPlantCategory(item, searchParam = '', categoryParam = '') {
+  if (categoryParam && categoryParam !== 'All') return categoryParam;
+
+  const queryLower = searchParam.toLowerCase();
+  const titleLower = (item.preferred_common_name || item.common_name || '').toLowerCase();
+  const nameLower = (item.name || '').toLowerCase();
+
+  if (queryLower.includes('houseplant')) return 'Houseplants';
+  if (queryLower.includes('cactus')) return 'Cactuses';
+  if (queryLower.includes('succulent')) return 'Succulents';
+  if (queryLower.includes('flower') || queryLower.includes('rose')) return 'Flowers';
+  if (queryLower.includes('tree')) return 'Trees';
+  if (queryLower.includes('vegetable') || queryLower.includes('fruit')) return 'Veggies & Fruit';
+  if (queryLower.includes('grass')) return 'Grasses';
+  if (queryLower.includes('shrub')) return 'Shrubs';
+  if (queryLower.includes('fern')) return 'Ferns';
+  if (queryLower.includes('herb')) return 'Herbs';
+  if (queryLower.includes('foliage')) return 'Foliage';
+  if (queryLower.includes('aquatic')) return 'Aquatics';
+  if (queryLower.includes('mushroom')) return 'Mushrooms';
+  if (queryLower.includes('weed')) return 'Weeds';
+
+  if (titleLower.includes('cactus') || nameLower.includes('cactaceae')) return 'Cactuses';
+  if (titleLower.includes('succulent') || titleLower.includes('aloe') || titleLower.includes('agave')) return 'Succulents';
+  if (titleLower.includes('rose') || titleLower.includes('orchid') || titleLower.includes('tulip') || titleLower.includes('lily') || titleLower.includes('sunflower') || titleLower.includes('daisy') || titleLower.includes('violet') || titleLower.includes('yarrow') || titleLower.includes('plantain') || titleLower.includes('mullein') || titleLower.includes('pokeweed')) return 'Flowers';
+  if (titleLower.includes('tree') || titleLower.includes('oak') || titleLower.includes('pine') || titleLower.includes('maple') || titleLower.includes('birch') || titleLower.includes('willow') || titleLower.includes('cedar') || titleLower.includes('spruce') || titleLower.includes('fir')) return 'Trees';
+  if (titleLower.includes('fern')) return 'Ferns';
+  if (titleLower.includes('grass') || titleLower.includes('bamboo')) return 'Grasses';
+  if (titleLower.includes('shrub') || titleLower.includes('bush')) return 'Shrubs';
+  if (titleLower.includes('herb') || titleLower.includes('mint') || titleLower.includes('basil') || titleLower.includes('thyme') || titleLower.includes('rosemary')) return 'Herbs';
+
+  return 'Houseplants';
+}
+
 const server = http.createServer(async (req, res) => {
   setCorsHeaders(res);
 
@@ -95,6 +130,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/external-plants' && req.method === 'GET') {
       const page = Number(url.searchParams.get('page') || '1');
       const search = url.searchParams.get('search') || '';
+      const categoryParam = url.searchParams.get('category') || 'All';
       const perPage = 30;
 
       // iNaturalist taxa endpoint — filter to Plantae kingdom (id 47126)
@@ -123,7 +159,7 @@ const server = http.createServer(async (req, res) => {
                 ? item.preferred_common_name.charAt(0).toUpperCase() + item.preferred_common_name.slice(1)
                 : item.name,
               text: item.name || '',
-              category: item.iconic_taxon_name || 'Plant',
+              category: getPlantCategory(item, search, categoryParam),
               img: {
                 src: item.default_photo?.medium_url || null,
                 alt: item.preferred_common_name || item.name || 'Plant'

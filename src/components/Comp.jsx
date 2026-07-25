@@ -76,7 +76,8 @@ export default function Comp({ searchText }) {
     try {
       const query = buildSearchQuery(selectedCategory, debouncedSearch);
       const searchParam = query ? `&search=${encodeURIComponent(query)}` : "";
-      const res = await fetch(`${API_BASE_URL}/api/external-plants?page=${pageNum}${searchParam}`);
+      const categoryParam = selectedCategory ? `&category=${encodeURIComponent(selectedCategory)}` : "";
+      const res = await fetch(`${API_BASE_URL}/api/external-plants?page=${pageNum}${searchParam}${categoryParam}`);
 
       // Rate limit hit — fall back to local data gracefully
       if (res.status === 429) {
