@@ -8,7 +8,7 @@ const PLACEHOLDER = "https://images.unsplash.com/photo-1416879595882-3373a0480b5
 export default function PlantDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const isLiveId = id && id.startsWith("perenual_");
+  const isLiveId = id && (id.startsWith("inat_") || id.startsWith("perenual_") || isNaN(Number(id)));
 
   // For local plants (numeric IDs), find immediately
   const localPlant = !isLiveId ? dataPlant.find((p) => p.id === Number(id)) : null;
