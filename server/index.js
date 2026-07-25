@@ -279,7 +279,7 @@ const server = http.createServer(async (req, res) => {
                   src: item.default_photo?.medium_url || null,
                   alt: commonName
                 },
-                symptoms: item.wikipedia_summary || `Noticeable discoloration, spots, or damage associated with ${commonName}. Inspect affected leaves and stems closely.`,
+                symptoms: item.wikipedia_summary ? item.wikipedia_summary.replace(/<[^>]*>/g, '') : `Noticeable discoloration, spots, or damage associated with ${commonName}. Inspect affected leaves and stems closely.`,
                 treatment: isPest
                   ? `Spray affected foliage with neem oil or insecticidal soap. Isolate plant and manually remove visible pests.`
                   : `Prune severely infected leaves. Apply copper-based fungicide or neem oil solution. Improve airflow around the plant.`,
@@ -337,7 +337,7 @@ const server = http.createServer(async (req, res) => {
             src: detail.default_photo?.medium_url || null,
             alt: commonName
           },
-          symptoms: detail.wikipedia_summary || `Symptoms include visible structural damage, spots, or abnormal growth patterns caused by ${commonName}.`,
+          symptoms: detail.wikipedia_summary ? detail.wikipedia_summary.replace(/<[^>]*>/g, '') : `Symptoms include visible structural damage, spots, or abnormal growth patterns caused by ${commonName}.`,
           treatment: isPest
             ? `Apply organic insecticidal soap or neem oil spray. Quarantine affected plant and gently wipe leaves with a moist cloth.`
             : `Remove heavily infected foliage immediately. Spray with copper-based or sulfur-based fungicide. Ensure foliage dries quickly after watering.`,

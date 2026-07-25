@@ -110,24 +110,24 @@ export default function DiseaseDetail() {
         </span>
 
         {/* Description */}
-        <p className="detail-desc">{disease.text}</p>
+        <p className="detail-desc">{disease.text ? String(disease.text).replace(/<[^>]*>/g, '') : ""}</p>
 
         {/* Symptoms */}
         <div className="detail-section">
           <h3>🔍 Symptoms</h3>
-          <p>{disease.symptoms || "Look for unusual discoloration, spots, or deformation on leaves and stems. Monitor the plant closely for progressive changes."}</p>
+          <p>{disease.symptoms ? String(disease.symptoms).replace(/<[^>]*>/g, '') : "Look for unusual discoloration, spots, or deformation on leaves and stems. Monitor the plant closely for progressive changes."}</p>
         </div>
 
         {/* Treatment */}
         <div className="detail-section">
           <h3>💊 Treatment</h3>
-          <p>{disease.treatment || "Isolate the affected plant immediately. Remove visibly infected parts. Apply appropriate organic or chemical treatment as needed."}</p>
+          <p>{disease.treatment ? String(disease.treatment).replace(/<[^>]*>/g, '') : "Isolate the affected plant immediately. Remove visibly infected parts. Apply appropriate organic or chemical treatment as needed."}</p>
         </div>
 
         {/* Prevention */}
         <div className="detail-section">
           <h3>🛡 Prevention</h3>
-          <p>{disease.prevention || "Maintain good plant hygiene, ensure proper spacing for air circulation, and inspect plants regularly to catch problems early."}</p>
+          <p>{disease.prevention ? String(disease.prevention).replace(/<[^>]*>/g, '') : "Maintain good plant hygiene, ensure proper spacing for air circulation, and inspect plants regularly to catch problems early."}</p>
         </div>
 
         {disease.wikipediaUrl && (
