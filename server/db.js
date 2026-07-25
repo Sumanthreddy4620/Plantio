@@ -47,6 +47,12 @@ export const db = {
     return data.users.find(u => u.email.toLowerCase() === email.toLowerCase());
   },
 
+  // Find user by id
+  findUserById(id) {
+    const data = readDb();
+    return data.users.find(u => u.id === Number(id));
+  },
+
   // Create new user
   createUser({ firstName, lastName, email, password }) {
     const data = readDb();

@@ -57,7 +57,9 @@ export default function YourComp() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load plants.");
-      setEntries(data.plants || []);
+      const cloudPlants = data.plants || [];
+      setEntries(cloudPlants);
+      localStorage.setItem("plantio_local_plants", JSON.stringify(cloudPlants));
     } catch {
       // Fallback for Vercel / mobile deployment
       const saved = JSON.parse(localStorage.getItem("plantio_local_plants") || "[]");
@@ -90,20 +92,21 @@ export default function YourComp() {
       if (!res.ok) throw new Error(data.error || "Failed to add plant.");
       newPlant = data.plant;
     } catch {
-      // Fallback for Vercel / mobile deployment
+      // Fallback for offline / network timeout
       newPlant = {
         id: Date.now(),
         ...formData,
         userId: user?.id || 1,
         createdAt: new Date().toISOString()
       };
-      const saved = JSON.parse(localStorage.getItem("plantio_local_plants") || "[]");
-      const updated = [newPlant, ...saved];
-      localStorage.setItem("plantio_local_plants", JSON.stringify(updated));
     }
 
     if (newPlant) {
-      setEntries((prev) => [newPlant, ...prev]);
+      setEntries((prev) => {
+        const updated = [newPlant, ...prev];
+        localStorage.setItem("plantio_local_plants", JSON.stringify(updated));
+        return updated;
+      });
       setFormData({
         title: "",
         text: "",

@@ -9,7 +9,18 @@
       "createdAt": "2026-07-25T11:49:14.038Z"
     }
   ],
-  "user_plants": [],
+  "user_plants": [
+    {
+      "id": 2,
+      "userId": 1,
+      "title": "Sunflower",
+      "text": "Sunflower 1",
+      "imgUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQywnFK1i4GqzMvPF9NEvQWHxAdrPUEbV2hCgZOZVV8jg&s",
+      "wateringFrequency": "2",
+      "lastWatered": "2026-07-25",
+      "createdAt": "2026-07-25T14:24:02.228Z"
+    }
+  ],
   "nextUserId": 2,
-  "nextPlantId": 2
+  "nextPlantId": 3
 }

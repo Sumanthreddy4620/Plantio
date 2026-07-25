@@ -20,11 +20,11 @@ function hashPassword(password) {
   return crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
 }
 
-// Generate Auth Token
+// Generate Auth Token (stateless HMAC token)
 function generateToken(userObj) {
-  const token = crypto.randomBytes(32).toString('hex');
-  activeTokens.set(token, userObj);
-  return token;
+  const payload = Buffer.from(JSON.stringify({ id: userObj.id, email: userObj.email })).toString('base64');
+  const signature = crypto.createHmac('sha256', 'plantio_secret_key_2025').update(payload).digest('hex');
+  return `${payload}.${signature}`;
 }
 
 // Parse request JSON body
@@ -47,7 +47,27 @@ function authenticate(req) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   if (!token) return null;
-  return activeTokens.get(token) || null;
+
+  try {
+    const [payload, signature] = token.split('.');
+    if (!payload || !signature) return null;
+
+    const expectedSig = crypto.createHmac('sha256', 'plantio_secret_key_2025').update(payload).digest('hex');
+    if (signature !== expectedSig) return null;
+
+    const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf-8'));
+    const user = db.findUserById(decoded.id);
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email
+    };
+  } catch {
+    return null;
+  }
 }
 
 const server = http.createServer(async (req, res) => {
