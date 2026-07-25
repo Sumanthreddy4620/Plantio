@@ -102,6 +102,68 @@ function getPlantCategory(item, searchParam = '', categoryParam = '') {
   return 'Flowers';
 }
 
+// Helper to infer realistic botanical care details (watering, light, soil, toxicity, difficulty)
+function getPlantCareDetails(item) {
+  const common = (item.preferred_common_name || item.common_name || '').toLowerCase();
+  const sci = (item.name || '').toLowerCase();
+  const summary = (item.wikipedia_summary || '').toLowerCase();
+  const combined = `${common} ${sci} ${summary}`;
+
+  // 1. WATERING
+  let watering = "Weekly — Water when top 1 inch dry";
+  if (combined.includes('cactus') || combined.includes('succulent') || combined.includes('desert') || combined.includes('xerophyte') || sci.includes('cactaceae') || sci.includes('agavaceae')) {
+    watering = "Low — Water every 2-3 weeks when soil is dry";
+  } else if (combined.includes('aquatic') || combined.includes('swamp') || combined.includes('marsh') || combined.includes('bog') || combined.includes('fern') || combined.includes('damp')) {
+    watering = "High — Keep soil consistently moist";
+  } else if (combined.includes('tree') || combined.includes('shrub') || combined.includes('woody')) {
+    watering = "Moderate — Deep water when top 2 inches dry";
+  } else if (combined.includes('orchid') || combined.includes('epiphyte')) {
+    watering = "Special — Soak roots & drain every 7-10 days";
+  }
+
+  // 2. LIGHT
+  let light = "Bright indirect light";
+  if (combined.includes('cactus') || combined.includes('succulent') || combined.includes('sunflower') || combined.includes('full sun') || combined.includes('meadow') || combined.includes('prairie')) {
+    light = "Full direct sun (6+ hrs/day)";
+  } else if (combined.includes('fern') || combined.includes('understory') || combined.includes('shade') || combined.includes('forest floor') || combined.includes('moss')) {
+    light = "Medium to low indirect light";
+  } else if (combined.includes('tree') || combined.includes('shrub') || combined.includes('flower')) {
+    light = "Full sun to partial shade";
+  }
+
+  // 3. SOIL
+  let soil = "Well-draining potting mix";
+  if (combined.includes('cactus') || combined.includes('succulent') || sci.includes('cactaceae')) {
+    soil = "Fast-draining gritty cactus mix";
+  } else if (combined.includes('fern') || combined.includes('tropical') || combined.includes('peat')) {
+    soil = "Rich, moisture-retentive peaty mix";
+  } else if (combined.includes('orchid')) {
+    soil = "Coarse bark & sphagnum moss mix";
+  } else if (combined.includes('aquatic') || combined.includes('swamp') || combined.includes('marsh')) {
+    soil = "Organic-rich wet aquatic soil";
+  }
+
+  // 4. TOXICITY
+  let toxicity = "Non-toxic & Pet Safe";
+  if (combined.includes('toxic') || combined.includes('poison') || combined.includes('milkweed') || combined.includes('oleander') || combined.includes('nightshade') || combined.includes('dieffenbachia') || combined.includes('euphorbia') || combined.includes('pokeweed')) {
+    toxicity = "Toxic to pets & humans";
+  } else if (combined.includes('fern') || combined.includes('peperomia') || combined.includes('calathea') || combined.includes('palm') || combined.includes('herb') || combined.includes('basil') || combined.includes('mint')) {
+    toxicity = "Non-toxic & Pet Safe";
+  } else {
+    toxicity = "Slightly toxic if ingested";
+  }
+
+  // 5. DIFFICULTY
+  let difficulty = "Moderate";
+  if (combined.includes('cactus') || combined.includes('succulent') || combined.includes('easy') || combined.includes('hardy')) {
+    difficulty = "Easy";
+  } else if (combined.includes('orchid') || combined.includes('epiphyte') || combined.includes('delicate') || combined.includes('sensitive')) {
+    difficulty = "Hard";
+  }
+
+  return { watering, light, soil, toxicity, difficulty };
+}
+
 const server = http.createServer(async (req, res) => {
   setCorsHeaders(res);
 
@@ -150,24 +212,28 @@ const server = http.createServer(async (req, res) => {
         if (inatData && Array.isArray(inatData.results)) {
           const mappedPlants = inatData.results
             .filter(item => item.preferred_common_name) // only include plants with common names
-            .map(item => ({
-              id: `inat_${item.id}`,
-              title: item.preferred_common_name
-                ? item.preferred_common_name.charAt(0).toUpperCase() + item.preferred_common_name.slice(1)
-                : item.name,
-              text: item.name || '',
-              category: getPlantCategory(item, search, categoryParam),
-              img: {
-                src: item.default_photo?.medium_url || null,
-                alt: item.preferred_common_name || item.name || 'Plant'
-              },
-              watering: 'Regular',
-              light: 'Varies by species',
-              difficulty: 'Moderate',
-              toxicity: 'Check plant label',
-              description: item.wikipedia_summary || null,
-              wikipediaUrl: item.wikipedia_url || null
-            }));
+            .map(item => {
+              const care = getPlantCareDetails(item);
+              return {
+                id: `inat_${item.id}`,
+                title: item.preferred_common_name
+                  ? item.preferred_common_name.charAt(0).toUpperCase() + item.preferred_common_name.slice(1)
+                  : item.name,
+                text: item.name || '',
+                category: getPlantCategory(item, search, categoryParam),
+                img: {
+                  src: item.default_photo?.medium_url || null,
+                  alt: item.preferred_common_name || item.name || 'Plant'
+                },
+                watering: care.watering,
+                light: care.light,
+                soil: care.soil,
+                difficulty: care.difficulty,
+                toxicity: care.toxicity,
+                description: item.wikipedia_summary ? item.wikipedia_summary.replace(/<[^>]*>/g, '') : null,
+                wikipediaUrl: item.wikipedia_url || null
+              };
+            });
 
           const totalResults = inatData.total_results || 0;
           const lastPage = Math.ceil(totalResults / perPage);
@@ -203,6 +269,8 @@ const server = http.createServer(async (req, res) => {
           return sendJson(404, { error: 'Plant not found in iNaturalist.' });
         }
 
+        const care = getPlantCareDetails(detail);
+
         const plant = {
           id: `inat_${detail.id}`,
           title: detail.preferred_common_name
@@ -215,11 +283,11 @@ const server = http.createServer(async (req, res) => {
             alt: detail.preferred_common_name || detail.name || 'Plant'
           },
           description: detail.wikipedia_summary ? detail.wikipedia_summary.replace(/<[^>]*>/g, '') : null,
-          watering: 'Regular',
-          light: 'Varies by species',
-          soil: 'Well-draining',
-          difficulty: 'Moderate',
-          toxicity: 'Check plant label',
+          watering: care.watering,
+          light: care.light,
+          soil: care.soil,
+          difficulty: care.difficulty,
+          toxicity: care.toxicity,
           height: null,
           wikipediaUrl: detail.wikipedia_url || null,
         };

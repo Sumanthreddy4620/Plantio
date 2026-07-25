@@ -37,7 +37,7 @@ export default function Plants() {
             />
             <input type="submit" className="but" value="🔍︎" />
           </form>
-          <span>Search from 65+ plant species</span>
+          <span>Search from 300,00+ plant species</span>
         </div>
       </div>
 
