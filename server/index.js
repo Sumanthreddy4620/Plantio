@@ -205,11 +205,11 @@ const server = http.createServer(async (req, res) => {
       const perPage = 24;
 
       // Determine query search term
-      let queryTerm = search;
+      let queryTerm = search.trim();
       if (!queryTerm) {
-        if (category === 'Pest') queryTerm = 'pest insect';
-        else if (category === 'Disease') queryTerm = 'fungus disease spot';
-        else queryTerm = 'plant disease pest';
+        if (category === 'Pest') queryTerm = 'aphid';
+        else if (category === 'Disease') queryTerm = 'mildew';
+        else queryTerm = 'pest';
       }
 
       const inatUrl = `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams({
