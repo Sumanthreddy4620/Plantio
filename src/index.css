@@ -906,90 +906,93 @@ aside {
 }
 
 /* ===================== CARDS ===================== */
+/* ===================== CARDS & GRID ===================== */
 .plant-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 24px;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 16px 24px 48px;
+  box-sizing: border-box;
   align-content: flex-start;
-  padding-right: 8px;
 }
 
-.plant-entry {
+.plant-entry, .Blog-entry, .your-entry {
   font-family: var(--font);
   display: flex;
   flex-direction: column;
-  width: 220px;
-  height: 295px;
+  width: 100%;
+  height: 100%;
+  min-height: 310px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.28s ease, border-color 0.28s ease;
   background: var(--surface);
   cursor: pointer;
   text-decoration: none;
   color: inherit;
-}
-
-.Blog-entry {
-  font-family: var(--font);
-  display: flex;
-  flex-direction: column;
-  width: 220px;
-  height: 335px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-  background: var(--surface);
-  cursor: pointer;
-  text-decoration: none;
-  color: inherit;
-}
-
-.your-entry {
-  font-family: var(--font);
-  display: flex;
-  flex-direction: column;
-  width: 220px;
-  height: 295px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-  background: var(--surface);
   position: relative;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
 }
 
 .your-add-entry {
   font-family: var(--font);
   display: flex;
   flex-direction: column;
-  width: 220px;
-  height: 295px;
-  border: 2px dashed var(--border);
+  width: 100%;
+  height: 100%;
+  min-height: 310px;
+  border: 2px dashed rgba(4, 191, 148, 0.4);
   border-radius: var(--radius);
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  transition: all 0.25s ease;
+  gap: 14px;
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
-  color: var(--text-muted);
-  background: var(--bg);
-  font-size: 0.9rem;
-  font-weight: 600;
+  color: var(--primary-dark);
+  background: rgba(4, 191, 148, 0.03);
+  font-size: 0.95rem;
+  font-weight: 700;
+  box-sizing: border-box;
+  padding: 24px;
+  text-align: center;
 }
 
 .your-add-entry:hover {
   border-color: var(--primary);
-  color: var(--primary);
-  background: var(--primary-light);
-  transform: translateY(-5px);
+  color: var(--primary-dark);
+  background: rgba(4, 191, 148, 0.08);
+  transform: translateY(-6px);
+  box-shadow: 0 14px 32px rgba(4, 191, 148, 0.18);
+}
+
+.Add-div {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  font-weight: 400;
+  box-shadow: 0 6px 16px rgba(4, 191, 148, 0.35);
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.your-add-entry:hover .Add-div {
+  transform: scale(1.1) rotate(90deg);
+  background: var(--primary-dark);
 }
 
 .plant-entry:hover, .Blog-entry:hover, .your-entry:hover {
   transform: translateY(-6px);
-  box-shadow: 0 18px 44px rgba(4, 191, 148, 0.16);
+  box-shadow: 0 16px 36px rgba(4, 191, 148, 0.16);
   border-color: var(--primary);
 }
 
@@ -1031,7 +1034,31 @@ aside {
 
 
 .main-name { margin: 12px 14px 4px; font-size: 0.98rem; font-weight: 800; color: var(--text); }
-.main-name-info { margin: 0 14px 10px; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+.main-name-info {
+  margin: 0 14px 12px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.your-entry-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 0 0 12px;
+  position: relative;
+}
+
+.your-entry-footer {
+  margin-top: auto;
+  padding: 0 14px 4px;
+  display: flex;
+  justify-content: flex-end;
+}
 
 .plant-category-badge {
   margin: 0 14px 10px;
@@ -1044,15 +1071,21 @@ aside {
   font-weight: 800;
 }
 
-/* Delete & watering badges */
-.your-delete-btn {
+/* Card Actions Overlay */
+.your-card-actions {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(220, 38, 38, 0.2);
-  color: #ef4444;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  z-index: 5;
+}
+
+.your-edit-btn, .your-delete-btn {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 10px;
   width: 32px;
   height: 32px;
@@ -1060,14 +1093,22 @@ aside {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  opacity: 0.85;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 10;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  font-size: 0.85rem;
 }
 
-.your-entry:hover .your-delete-btn {
-  opacity: 1;
+.your-edit-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px rgba(4, 191, 148, 0.35);
+}
+
+.your-delete-btn {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .your-delete-btn:hover {
@@ -1079,21 +1120,145 @@ aside {
 }
 
 .watering-badge {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
   border-radius: 20px;
-  padding: 3px 9px;
-  font-size: 0.7rem;
+  padding: 5px 12px;
+  font-size: 0.72rem;
   font-weight: 800;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
 }
 
-.watering-badge.due { background: #fee2e2; color: #991b1b; }
-.watering-badge.ok { background: #d1fae5; color: #065f46; }
-.watering-badge.soon { background: #fef3c7; color: #92400e; }
+.watering-badge:hover {
+  transform: scale(1.04);
+}
+
+.watering-badge.due { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.watering-badge.ok { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+.watering-badge.soon { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+
+/* ===================== YOUR GARDEN HEADER & EMPTY STATE ===================== */
+.yourcomp-header-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1240px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 32px 24px 16px;
+  box-sizing: border-box;
+}
+
+.yourcomp-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.yourcomp-header-title h2 {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--text);
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.yourcomp-count-pill {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-weight: 800;
+  font-size: 0.8rem;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(4, 191, 148, 0.25);
+}
+
+.yourcomp-add-header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 16px rgba(4, 191, 148, 0.35);
+}
+
+.yourcomp-add-header-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(4, 191, 148, 0.45);
+}
+
+.yourcomp-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  max-width: 580px;
+  width: 90%;
+  margin: 40px auto 80px;
+  padding: 48px 32px;
+  background: var(--surface);
+  border: 1.5px dashed rgba(4, 191, 148, 0.3);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.1));
+}
+
+.yourcomp-empty-state h3 {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.yourcomp-empty-state p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 24px;
+  max-width: 440px;
+}
+
+.empty-state-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 28px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 24px rgba(4, 191, 148, 0.38);
+}
+
+.empty-state-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(4, 191, 148, 0.5);
+}
 
 /* ===================== SIGNUP / LOGIN ===================== */
 .signup, .login {
@@ -1990,15 +2155,23 @@ aside {
   .plant-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: 16px;
     width: 100%;
-    padding-right: 0;
+    padding: 12px 16px 40px;
   }
 
-  .plant-entry, .Blog-entry {
+  .plant-entry, .Blog-entry, .your-entry, .your-add-entry {
     width: 100%;
     height: auto;
-    min-height: 250px;
+    min-height: 260px;
+  }
+
+  .yourcomp-header-banner {
+    padding: 20px 16px 8px;
+  }
+
+  .yourcomp-header-title h2 {
+    font-size: 1.35rem;
   }
 
   .potd-card { flex-direction: column; text-align: center; padding: 28px 20px; }
@@ -2078,12 +2251,34 @@ aside {
   }
 }
 
-@media (max-width: 440px) {
+@media (max-width: 480px) {
   .plant-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 12px 12px 32px;
   }
-  .plant-entry, .Blog-entry {
+  .plant-entry, .Blog-entry, .your-entry, .your-add-entry {
+    width: 100%;
     max-width: 100%;
+    min-height: 240px;
+  }
+  .main-image-container {
+    height: 120px;
+  }
+  .main-name {
+    margin: 8px 10px 2px;
+    font-size: 0.88rem;
+  }
+  .main-name-info {
+    margin: 0 10px 8px;
+    font-size: 0.75rem;
+  }
+  .your-entry-footer {
+    padding: 0 10px 4px;
+  }
+  .watering-badge {
+    padding: 4px 8px;
+    font-size: 0.65rem;
   }
 
   .auth-form-panel {

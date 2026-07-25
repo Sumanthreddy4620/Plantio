@@ -460,11 +460,15 @@ export default function YourComp() {
         </div>
       )}
 
-      {/* Header Info */}
-      <div style={{ padding: "24px 24px 0", maxWidth: "1200px", width: "100%" }}>
-        <p className="SlidePanel-your">
-          {user.firstName}'s Plants ({entries.length})
-        </p>
+      {/* Header Info Banner */}
+      <div className="yourcomp-header-banner">
+        <div className="yourcomp-header-title">
+          <h2>{user.firstName}'s Plants</h2>
+          <span className="yourcomp-count-pill">{entries.length} {entries.length === 1 ? 'plant' : 'plants'}</span>
+        </div>
+        <button className="yourcomp-add-header-btn" onClick={() => setShowForm(true)}>
+          <span>+</span> Add Plant
+        </button>
       </div>
 
       {loading ? (
@@ -475,8 +479,17 @@ export default function YourComp() {
         <div style={{ textAlign: "center", padding: "60px", color: "#dc2626", fontWeight: 700 }}>
           ⚠ {error}
         </div>
+      ) : entries.length === 0 ? (
+        <div className="yourcomp-empty-state">
+          <div className="empty-state-icon">🪴</div>
+          <h3>Your Garden is Empty</h3>
+          <p>You haven't added any plants to your personal collection yet. Add your first plant to track watering schedules and care reminders!</p>
+          <button className="empty-state-btn" onClick={() => setShowForm(true)}>
+            <span>+</span> Add Your First Plant
+          </button>
+        </div>
       ) : (
-        <article className="plant-grid" style={{ padding: "0 24px 48px" }}>
+        <article className="plant-grid">
           {entries.map((entry) => (
             <YourGrid
               key={entry.id}
