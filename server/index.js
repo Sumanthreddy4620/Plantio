@@ -159,7 +159,10 @@ const server = http.createServer(async (req, res) => {
           });
         }
 
-        return sendJson(500, { error: 'Unexpected Perenual API response format.' });
+        return sendJson(500, {
+          error: 'Unexpected Perenual API response format.',
+          detail: perenualData?.error || perenualData?.message || JSON.stringify(perenualData).slice(0, 200)
+        });
       } catch (err) {
         return sendJson(500, { error: `Perenual API error: ${err.message}` });
       }
