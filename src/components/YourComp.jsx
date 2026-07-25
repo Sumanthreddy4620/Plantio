@@ -69,6 +69,27 @@ export default function YourComp() {
     }
   }
 
+  const [showUrlInput, setShowUrlInput] = useState(false);
+
+  function handleFileSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Please select an image smaller than 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFormData((prev) => ({
+        ...prev,
+        imgUrl: event.target.result
+      }));
+    };
+    reader.readAsDataURL(file);
+  }
+
   function handleChange(e) {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -211,12 +232,59 @@ export default function YourComp() {
               value={formData.text}
               onChange={handleChange}
             />
-            <input
-              name="imgUrl"
-              placeholder="Image URL (optional)"
-              value={formData.imgUrl}
-              onChange={handleChange}
-            />
+            {/* Photo Selection from device gallery or folder */}
+            <div className="form-photo-picker">
+              {formData.imgUrl ? (
+                <div className="photo-preview-box">
+                  <img src={formData.imgUrl} alt="Plant preview" className="photo-preview-img" />
+                  <button
+                    type="button"
+                    className="remove-photo-btn"
+                    onClick={() => setFormData(prev => ({ ...prev, imgUrl: "" }))}
+                  >
+                    🗑 Remove Photo
+                  </button>
+                </div>
+              ) : (
+                <div className="photo-dropzone">
+                  <label htmlFor="plant-photo-input" className="photo-upload-label">
+                    <span style={{ fontSize: "1.8rem" }}>📸</span>
+                    <span style={{ fontWeight: 800, fontSize: "0.9rem", color: "var(--primary-dark)" }}>
+                      Select Photo from Gallery or Folder
+                    </span>
+                    <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                      Click to choose an image file from your device
+                    </span>
+                  </label>
+                  <input
+                    id="plant-photo-input"
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={handleFileSelect}
+                  />
+                </div>
+              )}
+
+              <div style={{ textAlign: "center", margin: "6px 0 2px" }}>
+                <button
+                  type="button"
+                  style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline" }}
+                  onClick={() => setShowUrlInput(!showUrlInput)}
+                >
+                  {showUrlInput ? "Hide image URL input" : "Or paste an image URL instead"}
+                </button>
+              </div>
+
+              {showUrlInput && (
+                <input
+                  name="imgUrl"
+                  placeholder="Paste Image URL..."
+                  value={formData.imgUrl}
+                  onChange={handleChange}
+                />
+              )}
+            </div>
             <select
               name="wateringFrequency"
               value={formData.wateringFrequency}
