@@ -45,7 +45,7 @@ export default function PlantDetail() {
   }, [id, isLiveId]);
 
   async function handleAddToGarden() {
-    const token = sessionStorage.getItem("plantio_token");
+    const token = localStorage.getItem("plantio_token") || sessionStorage.getItem("plantio_token");
     if (!token) {
       setAddStatus("login");
       setTimeout(() => navigate("/login"), 1500);

@@ -23,11 +23,6 @@ export default function App() {
   const hideHeaderRoutes = ["/signup", "/login"];
   const shouldHideHeader = hideHeaderRoutes.includes(location.pathname);
 
-  // Security: Purge legacy stored passwords from browser localStorage on startup
-  useEffect(() => {
-    localStorage.removeItem("plantio_registered_users");
-  }, []);
-
   return (
     <>
       <ScrollToTop />

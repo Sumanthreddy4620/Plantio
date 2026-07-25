@@ -86,10 +86,9 @@ export default function Signup() {
         token = "demo_token_" + Date.now();
       }
 
-      // Clear local storage for security
-      localStorage.clear();
-
-      // Save token and non-sensitive user profile in sessionStorage ONLY
+      // Save token and non-sensitive user profile in localStorage so signup persists on page reloads
+      localStorage.setItem("plantio_token", token);
+      localStorage.setItem("plantio_user", JSON.stringify(userObj));
       sessionStorage.setItem("plantio_token", token);
       sessionStorage.setItem("plantio_user", JSON.stringify(userObj));
 
