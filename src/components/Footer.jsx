@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import plantLogo from "../assets/plant.svg";
 
 export default function Footer() {
   return (
@@ -6,7 +7,7 @@ export default function Footer() {
       <div className="footer-main">
         <div className="footer-brand">
           <div className="footer-logo-wrap">
-            <img src="/src/assets/plant.svg" alt="Plantio Logo" />
+            <img src={plantLogo} alt="Plantio Logo" />
             <span>Plantio</span>
           </div>
           <p className="footer-tagline">

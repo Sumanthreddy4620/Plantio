@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import plantLogo from "../assets/plant.svg";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -73,7 +74,7 @@ export default function Login() {
         {/* ── Left green brand panel ── */}
         <div className="auth-brand">
           <div className="auth-brand-logo">
-            <img src="/src/assets/plant.svg" alt="Plantio" />
+            <img src={plantLogo} alt="Plantio" />
             <span>Plantio</span>
           </div>
 

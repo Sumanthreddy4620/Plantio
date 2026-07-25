@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import plantLogo from "../assets/plant.svg";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -47,7 +48,7 @@ export default function Header() {
     <header className={isScrolled ? "scrolled" : ""}>
       <div className="header-logo">
         <NavLink to="/" onClick={closeMenu}>
-          <img src="/src/assets/plant.svg" alt="Plantio Logo" />
+          <img src={plantLogo} alt="Plantio Logo" />
           <p>Plantio</p>
         </NavLink>
       </div>
