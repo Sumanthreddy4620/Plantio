@@ -15,7 +15,7 @@ function useDebounce(value, delay) {
 
 const categories = [
   "All", "Cactuses", "Succulents", "Flowers",
-  "Trees", "Veggies & Fruit", "Grasses", "Shrubs", "Ferns",
+  "Trees", "Grasses", "Shrubs", "Ferns",
   "Herbs", "Foliage", "Aquatics", "Mushrooms", "Weeds",
 ];
 
@@ -25,7 +25,6 @@ const CATEGORY_SEARCH_MAP = {
   "Succulents": "succulent",
   "Flowers": "flower",
   "Trees": "tree",
-  "Veggies & Fruit": "vegetable",
   "Grasses": "grass",
   "Shrubs": "shrub",
   "Ferns": "fern",

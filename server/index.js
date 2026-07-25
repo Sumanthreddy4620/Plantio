@@ -82,7 +82,6 @@ function getPlantCategory(item, searchParam = '', categoryParam = '') {
   if (queryLower.includes('succulent')) return 'Succulents';
   if (queryLower.includes('flower') || queryLower.includes('rose')) return 'Flowers';
   if (queryLower.includes('tree')) return 'Trees';
-  if (queryLower.includes('vegetable') || queryLower.includes('fruit')) return 'Veggies & Fruit';
   if (queryLower.includes('grass')) return 'Grasses';
   if (queryLower.includes('shrub')) return 'Shrubs';
   if (queryLower.includes('fern')) return 'Ferns';
