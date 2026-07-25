@@ -18,7 +18,7 @@ export default function Header() {
   useEffect(() => {
     const checkUser = () => {
       try {
-        const storedUser = localStorage.getItem("plantio_user");
+        const storedUser = sessionStorage.getItem("plantio_user");
         if (storedUser) {
           setUser(JSON.parse(storedUser));
         } else {
@@ -37,8 +37,8 @@ export default function Header() {
   const closeMenu = () => setIsMenuOpen(false);
 
   const handleLogout = () => {
-    localStorage.removeItem("plantio_token");
-    localStorage.removeItem("plantio_user");
+    sessionStorage.clear();
+    localStorage.clear();
     setUser(null);
     closeMenu();
     navigate("/");

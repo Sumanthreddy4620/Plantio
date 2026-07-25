@@ -8,10 +8,10 @@ export default function YourComp() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [token, setToken] = useState(() => localStorage.getItem("plantio_token"));
+  const [token, setToken] = useState(() => sessionStorage.getItem("plantio_token"));
   const [user, setUser] = useState(() => {
     try {
-      const u = localStorage.getItem("plantio_user");
+      const u = sessionStorage.getItem("plantio_user");
       return u ? JSON.parse(u) : null;
     } catch {
       return null;
@@ -29,8 +29,8 @@ export default function YourComp() {
   // Re-check token/user on storage event
   useEffect(() => {
     const syncAuth = () => {
-      const t = localStorage.getItem("plantio_token");
-      const u = localStorage.getItem("plantio_user");
+      const t = sessionStorage.getItem("plantio_token");
+      const u = sessionStorage.getItem("plantio_user");
       setToken(t);
       setUser(u ? JSON.parse(u) : null);
     };
@@ -57,13 +57,9 @@ export default function YourComp() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load plants.");
-      const cloudPlants = data.plants || [];
-      setEntries(cloudPlants);
-      localStorage.setItem("plantio_local_plants", JSON.stringify(cloudPlants));
-    } catch {
-      // Fallback for Vercel / mobile deployment
-      const saved = JSON.parse(localStorage.getItem("plantio_local_plants") || "[]");
-      setEntries(saved);
+      setEntries(data.plants || []);
+    } catch (err) {
+      setError(err.message || "Could not load plants from database.");
     } finally {
       setLoading(false);
     }
@@ -99,7 +95,6 @@ export default function YourComp() {
     e.preventDefault();
     if (!formData.title.trim() || !token) return;
 
-    let newPlant = null;
     try {
       const res = await fetch(`${API_BASE_URL}/api/user-plants`, {
         method: "POST",
@@ -111,67 +106,54 @@ export default function YourComp() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to add plant.");
-      newPlant = data.plant;
-    } catch {
-      // Fallback for offline / network timeout
-      newPlant = {
-        id: Date.now(),
-        ...formData,
-        userId: user?.id || 1,
-        createdAt: new Date().toISOString()
-      };
-    }
 
-    if (newPlant) {
-      setEntries((prev) => {
-        const updated = [newPlant, ...prev];
-        localStorage.setItem("plantio_local_plants", JSON.stringify(updated));
-        return updated;
-      });
-      setFormData({
-        title: "",
-        text: "",
-        imgUrl: "",
-        wateringFrequency: "7",
-        lastWatered: new Date().toISOString().split("T")[0],
-      });
-      setShowForm(false);
+      if (data.plant) {
+        setEntries((prev) => [data.plant, ...prev]);
+        setFormData({
+          title: "",
+          text: "",
+          imgUrl: "",
+          wateringFrequency: "7",
+          lastWatered: new Date().toISOString().split("T")[0],
+        });
+        setShowForm(false);
+      }
+    } catch (err) {
+      alert(err.message || "Could not add plant to database.");
     }
   }
 
   async function handleDelete(id) {
     if (!token) return;
     try {
-      await fetch(`${API_BASE_URL}/api/user-plants/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/user-plants/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
-    } catch {
-      // Fallback for Vercel / mobile deployment
+      if (res.ok) {
+        setEntries((prev) => prev.filter((e) => e.id !== id));
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
     }
-    const saved = JSON.parse(localStorage.getItem("plantio_local_plants") || "[]");
-    const updated = saved.filter((e) => e.id !== id);
-    localStorage.setItem("plantio_local_plants", JSON.stringify(updated));
-    setEntries((prev) => prev.filter((e) => e.id !== id));
   }
 
   async function handleWater(id) {
     if (!token) return;
-    const today = new Date().toISOString().split("T")[0];
     try {
-      await fetch(`${API_BASE_URL}/api/user-plants/${id}/water`, {
+      const res = await fetch(`${API_BASE_URL}/api/user-plants/${id}/water`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` }
       });
-    } catch {
-      // Fallback for Vercel / mobile deployment
+      const data = await res.json();
+      if (res.ok && data.lastWatered) {
+        setEntries((prev) =>
+          prev.map((e) => (e.id === id ? { ...e, lastWatered: data.lastWatered } : e))
+        );
+      }
+    } catch (err) {
+      console.error("Watering update error:", err);
     }
-    const saved = JSON.parse(localStorage.getItem("plantio_local_plants") || "[]");
-    const updated = saved.map((e) => e.id === id ? { ...e, lastWatered: today } : e);
-    localStorage.setItem("plantio_local_plants", JSON.stringify(updated));
-    setEntries((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, lastWatered: today } : e))
-    );
   }
 
   // ── EDIT / MODIFY PLANT REMINDER ──
@@ -221,9 +203,8 @@ export default function YourComp() {
 
   async function handleUpdateSubmit(e) {
     e.preventDefault();
-    if (!editingPlant || !editFormData.title.trim()) return;
+    if (!editingPlant || !editFormData.title.trim() || !token) return;
 
-    let updatedPlant = null;
     try {
       const res = await fetch(`${API_BASE_URL}/api/user-plants/${editingPlant.id}`, {
         method: "PUT",
@@ -235,26 +216,16 @@ export default function YourComp() {
       });
       const data = await res.json();
       if (res.ok && data.plant) {
-        updatedPlant = data.plant;
+        setEntries((prev) =>
+          prev.map((p) => (p.id === editingPlant.id ? data.plant : p))
+        );
+        setEditingPlant(null);
+      } else {
+        throw new Error(data.error || "Failed to update plant.");
       }
-    } catch {
-      // Fallback for Vercel / offline
+    } catch (err) {
+      alert(err.message || "Could not update plant in database.");
     }
-
-    if (!updatedPlant) {
-      updatedPlant = {
-        ...editingPlant,
-        ...editFormData
-      };
-    }
-
-    setEntries((prev) => {
-      const updatedList = prev.map((p) => (p.id === editingPlant.id ? updatedPlant : p));
-      localStorage.setItem("plantio_local_plants", JSON.stringify(updatedList));
-      return updatedList;
-    });
-
-    setEditingPlant(null);
   }
 
   // If user is not logged in, prompt to log in / sign up

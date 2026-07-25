@@ -76,7 +76,7 @@ export default function Signup() {
           throw networkErr;
         }
 
-        // Fallback for Vercel / mobile deployment when localhost is unreachable
+        // Fallback for Vercel live demo mode when API server is separate
         userObj = {
           id: Date.now(),
           firstName: form.firstName,
@@ -84,15 +84,14 @@ export default function Signup() {
           email: form.email,
         };
         token = "demo_token_" + Date.now();
-
-        const existingUsers = JSON.parse(localStorage.getItem("plantio_registered_users") || "[]");
-        existingUsers.push({ ...userObj, password: form.password });
-        localStorage.setItem("plantio_registered_users", JSON.stringify(existingUsers));
       }
 
-      // Save token and user details
-      localStorage.setItem("plantio_token", token);
-      localStorage.setItem("plantio_user", JSON.stringify(userObj));
+      // Clear local storage for security
+      localStorage.clear();
+
+      // Save token and non-sensitive user profile in sessionStorage ONLY
+      sessionStorage.setItem("plantio_token", token);
+      sessionStorage.setItem("plantio_user", JSON.stringify(userObj));
 
       // Dispatch window event so Header updates
       window.dispatchEvent(new Event("storage"));
