@@ -1995,7 +1995,7 @@ aside {
     padding-right: 0;
   }
 
-  .plant-entry, .Blog-entry {
+  .plant-entry, .Blog-entry, .your-entry, .your-add-entry {
     width: 100%;
     height: auto;
     min-height: 250px;
@@ -2082,7 +2082,8 @@ aside {
   .plant-grid {
     grid-template-columns: 1fr;
   }
-  .plant-entry, .Blog-entry {
+  .plant-entry, .Blog-entry, .your-entry, .your-add-entry {
+    width: 100%;
     max-width: 100%;
   }
 
