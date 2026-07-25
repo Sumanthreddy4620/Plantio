@@ -78,7 +78,6 @@ function getPlantCategory(item, searchParam = '', categoryParam = '') {
   const titleLower = (item.preferred_common_name || item.common_name || '').toLowerCase();
   const nameLower = (item.name || '').toLowerCase();
 
-  if (queryLower.includes('houseplant')) return 'Houseplants';
   if (queryLower.includes('cactus')) return 'Cactuses';
   if (queryLower.includes('succulent')) return 'Succulents';
   if (queryLower.includes('flower') || queryLower.includes('rose')) return 'Flowers';
@@ -102,7 +101,7 @@ function getPlantCategory(item, searchParam = '', categoryParam = '') {
   if (titleLower.includes('shrub') || titleLower.includes('bush')) return 'Shrubs';
   if (titleLower.includes('herb') || titleLower.includes('mint') || titleLower.includes('basil') || titleLower.includes('thyme') || titleLower.includes('rosemary')) return 'Herbs';
 
-  return 'Houseplants';
+  return 'Flowers';
 }
 
 const server = http.createServer(async (req, res) => {
