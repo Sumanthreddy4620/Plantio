@@ -396,7 +396,7 @@ const server = http.createServer(async (req, res) => {
           const title = item.title;
           const snippet = item.extract ? item.extract.slice(0, 140) + '...' : `Essential guide on ${title} for gardeners and plant enthusiasts.`;
           const cat = category !== 'All' ? category : (idx % 2 === 0 ? 'Plant Care' : 'Indoor Plants');
-          const imgUrl = item.thumbnail?.source || `https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80`;
+          const imgUrl = item.thumbnail?.source || null;
 
           return {
             id: `blog_live_${item.pageid}`,

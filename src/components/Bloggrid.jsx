@@ -1,20 +1,25 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
-const PLACEHOLDER =
-  "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80";
-
 export default function BlogGrid({ img, title, text, id }) {
-  const imgSrc = img || PLACEHOLDER;
+  const [imgFailed, setImgFailed] = useState(!img);
 
   const inner = (
     <>
       <div className="main-image-container">
-        <img
-          className="main-image"
-          src={imgSrc}
-          alt={title}
-          onError={(e) => { e.target.src = PLACEHOLDER; }}
-        />
+        {imgFailed ? (
+          <div className="main-image-fallback">
+            <span className="main-image-fallback-icon">📰</span>
+            <span className="main-image-fallback-text">{title}</span>
+          </div>
+        ) : (
+          <img
+            className="main-image"
+            src={img}
+            alt={title}
+            onError={() => setImgFailed(true)}
+          />
+        )}
       </div>
       <h3 className="main-name">{title}</h3>
       <p className="main-name-info">{text}</p>
