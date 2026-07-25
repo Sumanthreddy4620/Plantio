@@ -3,7 +3,7 @@ import Grid from "./Grid";
 import dataPlant from "./data-plant";
 import API_BASE_URL from "../config";
 
-// Debounce hook — delays the value until user stops typing
+// Debounce hook
 function useDebounce(value, delay) {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
@@ -19,6 +19,24 @@ const categories = [
   "Herbs", "Foliage", "Aquatics", "Mushrooms", "Weeds",
 ];
 
+// Map our UI categories → Perenual search terms
+const CATEGORY_SEARCH_MAP = {
+  "Houseplants": "houseplant",
+  "Cactuses": "cactus",
+  "Succulents": "succulent",
+  "Flowers": "flower",
+  "Trees": "tree",
+  "Veggies & Fruit": "vegetable",
+  "Grasses": "grass",
+  "Shrubs": "shrub",
+  "Ferns": "fern",
+  "Herbs": "herb",
+  "Foliage": "foliage",
+  "Aquatics": "aquatic",
+  "Mushrooms": "mushroom",
+  "Weeds": "weed",
+};
+
 export default function Comp({ searchText }) {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [plants, setPlants] = useState([]);
@@ -30,6 +48,15 @@ export default function Comp({ searchText }) {
   const [totalCount, setTotalCount] = useState(null);
   const debouncedSearch = useDebounce(searchText, 400);
   const isMounted = useRef(true);
+
+  // Build the combined search query: user text + category keyword
+  const buildSearchQuery = useCallback((category, userText) => {
+    const categoryTerm = CATEGORY_SEARCH_MAP[category] || "";
+    if (userText && categoryTerm) return `${userText} ${categoryTerm}`;
+    if (userText) return userText;
+    if (categoryTerm) return categoryTerm;
+    return "";
+  }, []);
 
   useEffect(() => {
     isMounted.current = true;
@@ -46,7 +73,8 @@ export default function Comp({ searchText }) {
     else setLoadingMore(true);
 
     try {
-      const searchParam = debouncedSearch ? `&search=${encodeURIComponent(debouncedSearch)}` : "";
+      const query = buildSearchQuery(selectedCategory, debouncedSearch);
+      const searchParam = query ? `&search=${encodeURIComponent(query)}` : "";
       const res = await fetch(`${API_BASE_URL}/api/external-plants?page=${pageNum}${searchParam}`);
       if (!res.ok) throw new Error("API unavailable");
       const data = await res.json();
@@ -61,7 +89,11 @@ export default function Comp({ searchText }) {
     } catch {
       if (!isMounted.current) return;
       if (isReset) {
-        const filtered = dataPlant.filter((p) =>
+        // Fallback: filter local dataset by category + search
+        const catFilter = selectedCategory === "All"
+          ? dataPlant
+          : dataPlant.filter((p) => p.category === selectedCategory);
+        const filtered = catFilter.filter((p) =>
           p.title.toLowerCase().includes(debouncedSearch.toLowerCase())
         );
         setPlants(filtered);
@@ -76,7 +108,7 @@ export default function Comp({ searchText }) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch]);
+  }, [debouncedSearch, selectedCategory, buildSearchQuery]);
 
   const handleLoadMore = () => {
     const nextPage = page + 1;
@@ -84,14 +116,7 @@ export default function Comp({ searchText }) {
     fetchPlants(nextPage, false);
   };
 
-  // Client-side category filter for Perenual's cycle field
-  const displayPlants = selectedCategory === "All"
-    ? plants
-    : plants.filter((p) =>
-        (p.category || "").toLowerCase().includes(selectedCategory.toLowerCase())
-      );
-
-  const entryElements = displayPlants.map((entry) => (
+  const entryElements = plants.map((entry) => (
     <Grid
       key={entry.id}
       id={entry.id}
@@ -104,7 +129,7 @@ export default function Comp({ searchText }) {
 
   return (
     <aside>
-      {/* Left sidebar — category filter (original design) */}
+      {/* Left sidebar — category filter */}
       <div className="SlidePanel">
         {categories.map((category) => (
           <button
@@ -128,14 +153,13 @@ export default function Comp({ searchText }) {
               </p>
             ) : totalCount !== null ? (
               <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
-                🌿 Showing <strong>{displayPlants.length}</strong> of{" "}
+                🌿 Showing <strong>{plants.length}</strong> of{" "}
                 <strong>{totalCount.toLocaleString()}</strong> species from live database
               </p>
             ) : null}
           </div>
         )}
 
-        {/* Loading skeletons */}
         {loading
           ? Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="plant-skeleton" aria-hidden="true" />
@@ -150,8 +174,8 @@ export default function Comp({ searchText }) {
           )
           : entryElements}
 
-        {/* Load More — full width row at bottom of grid */}
-        {!loading && !usingFallback && hasMore && displayPlants.length > 0 && (
+        {/* Load More */}
+        {!loading && !usingFallback && hasMore && plants.length > 0 && (
           <div style={{ width: "100%", textAlign: "center", paddingTop: "16px" }}>
             <button
               onClick={handleLoadMore}
