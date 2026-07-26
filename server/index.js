@@ -568,65 +568,94 @@ const server = http.createServer(async (req, res) => {
         let aiMessage = '';
         let matchedTaxa = null;
 
-        // 1. Extract search terms for live iNaturalist Taxa API lookup
-        const cleanPrompt = prompt.toLowerCase();
+        const cleanPrompt = prompt.toLowerCase().trim();
+
+        // 1. Detect simple conversational greetings
+        const conversationalWords = ['hello', 'hi', 'hey', 'greetings', 'good morning', 'good evening', 'good afternoon', 'who are you', 'what can you do', 'help', 'thanks', 'thank you', 'bye', 'goodbye', 'cool', 'ok', 'okay', 'nice', 'awesome'];
+        const isGreeting = !imageUrl && !imageBase64 && (
+          conversationalWords.includes(cleanPrompt) ||
+          cleanPrompt === 'hello' ||
+          cleanPrompt === 'hi' ||
+          cleanPrompt === 'hey' ||
+          cleanPrompt.startsWith('hello ') ||
+          cleanPrompt.startsWith('hi ') ||
+          cleanPrompt.startsWith('hey ')
+        ) && !cleanPrompt.includes('plant') && !cleanPrompt.includes('disease') && !cleanPrompt.includes('leaf') && !cleanPrompt.includes('spot') && !cleanPrompt.includes('water');
+
+        if (isGreeting) {
+          return sendJson(200, {
+            message: `Hello! 👋 I am your **Plantio AI Doctor & Botanical Assistant**.\n\nHow can I assist your garden today?\n- 🌿 Ask me to identify any plant (e.g. *"Tell me about Monstera"* or *"Snake Plant care"*)\n- 📸 Upload a photo of a plant leaf to diagnose diseases & pests\n- 💧 Ask for watering, sunlight, or soil recommendations!`,
+            diagnosis: null,
+            timestamp: new Date().toISOString()
+          });
+        }
+
+        // 2. Extract meaningful botanical search tokens
         let searchKeywords = prompt.replace(/[^\w\s]/gi, '').trim();
-
-        const stopWords = ['what', 'is', 'this', 'plant', 'disease', 'how', 'to', 'treat', 'can', 'you', 'identify', 'name', 'of', 'my', 'the', 'leaves', 'with', 'spots', 'yellow', 'brown', 'on', 'please', 'tell', 'me'];
+        const stopWords = [
+          'what', 'is', 'this', 'plant', 'disease', 'how', 'to', 'treat', 'can', 'you',
+          'identify', 'name', 'of', 'my', 'the', 'leaves', 'with', 'spots', 'yellow',
+          'brown', 'on', 'please', 'tell', 'me', 'hello', 'hi', 'hey', 'why', 'are',
+          'should', 'water', 'care', 'about', 'some', 'give', 'information'
+        ];
         const keywordTokens = searchKeywords.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w.toLowerCase()));
-        const queryTerm = keywordTokens.slice(0, 3).join(' ') || searchKeywords || 'plant';
+        const queryTerm = keywordTokens.slice(0, 3).join(' ');
 
-        // 2. Query live iNaturalist API (same API powering the Plants page with 300,000+ species)
-        let inatTaxa = [];
-        try {
-          const inatRes = await fetch(
-            `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams({
-              q: queryTerm,
-              per_page: 5,
-              locale: 'en'
-            }),
-            { headers: { 'Accept': 'application/json', 'User-Agent': 'Plantio/1.0' } }
-          );
-          if (inatRes.ok) {
-            const inatData = await inatRes.json();
-            inatTaxa = inatData.results || [];
+        // 3. Query live iNaturalist API if we have a specific query or image
+        if (queryTerm || imageUrl || imageBase64) {
+          let inatTaxa = [];
+          try {
+            const inatRes = await fetch(
+              `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams({
+                q: queryTerm || 'Plantae',
+                per_page: 5,
+                locale: 'en'
+              }),
+              { headers: { 'Accept': 'application/json', 'User-Agent': 'Plantio/1.0' } }
+            );
+            if (inatRes.ok) {
+              const inatData = await inatRes.json();
+              inatTaxa = inatData.results || [];
+            }
+          } catch (e) {
+            console.error('iNaturalist API search error in AI Chat:', e.message);
           }
-        } catch (e) {
-          console.error('iNaturalist API search error in AI Chat:', e.message);
+
+          // Only accept taxon if common name matches or query matches
+          const topTaxon = inatTaxa.find(t => t.preferred_common_name && (queryTerm ? t.preferred_common_name.toLowerCase().includes(queryTerm) || t.name.toLowerCase().includes(queryTerm) : true)) || inatTaxa[0];
+
+          if (topTaxon && (queryTerm.length > 2 || imageUrl || imageBase64)) {
+            const care = getPlantCareDetails(topTaxon);
+            const commonName = topTaxon.preferred_common_name
+              ? topTaxon.preferred_common_name.charAt(0).toUpperCase() + topTaxon.preferred_common_name.slice(1)
+              : topTaxon.name;
+            const isInsectOrPest = (topTaxon.iconic_taxon_name === 'Insecta' || topTaxon.iconic_taxon_name === 'Arachnida' || cleanPrompt.includes('pest') || cleanPrompt.includes('bug') || cleanPrompt.includes('disease') || cleanPrompt.includes('spot') || cleanPrompt.includes('rot') || cleanPrompt.includes('blight') || cleanPrompt.includes('mildew'));
+
+            matchedTaxa = {
+              id: `inat_${topTaxon.id}`,
+              title: commonName,
+              scientificName: topTaxon.name,
+              category: isInsectOrPest ? (topTaxon.iconic_taxon_name === 'Insecta' ? 'Pest' : 'Disease') : getPlantCategory(topTaxon),
+              confidence: '94% Match',
+              img: {
+                src: imageUrl || (imageBase64 ? imageBase64 : (topTaxon.default_photo?.medium_url || null)),
+                alt: commonName
+              },
+              care: care,
+              description: topTaxon.wikipedia_summary ? topTaxon.wikipedia_summary.replace(/<[^>]*>/g, '') : null,
+              symptoms: isInsectOrPest
+                ? (topTaxon.wikipedia_summary ? topTaxon.wikipedia_summary.replace(/<[^>]*>/g, '').slice(0, 220) + '...' : `Discoloration, lesions, leaf spots, or stunting associated with ${commonName}.`)
+                : `Signs of stress may include leaf yellowing, wilting, or slowed leaf output.`,
+              treatment: isInsectOrPest
+                ? `Apply neem oil spray or insecticidal soap. Prune infected leaves and increase airflow.`
+                : `Provide adequate indirect sunlight, allow topsoil to dry before watering, and maintain appropriate humidity.`,
+              prevention: `Inspect leaf undersides weekly, use clean well-draining soil, and avoid overwatering.`,
+              wikipediaUrl: topTaxon.wikipedia_url || null
+            };
+          }
         }
 
-        const topTaxon = inatTaxa.find(t => t.preferred_common_name) || inatTaxa[0];
-        if (topTaxon) {
-          const care = getPlantCareDetails(topTaxon);
-          const commonName = topTaxon.preferred_common_name
-            ? topTaxon.preferred_common_name.charAt(0).toUpperCase() + topTaxon.preferred_common_name.slice(1)
-            : topTaxon.name;
-          const isInsectOrPest = (topTaxon.iconic_taxon_name === 'Insecta' || topTaxon.iconic_taxon_name === 'Arachnida' || cleanPrompt.includes('pest') || cleanPrompt.includes('bug') || cleanPrompt.includes('disease') || cleanPrompt.includes('spot') || cleanPrompt.includes('rot') || cleanPrompt.includes('blight') || cleanPrompt.includes('mildew'));
-
-          matchedTaxa = {
-            id: `inat_${topTaxon.id}`,
-            title: commonName,
-            scientificName: topTaxon.name,
-            category: isInsectOrPest ? (topTaxon.iconic_taxon_name === 'Insecta' ? 'Pest' : 'Disease') : getPlantCategory(topTaxon),
-            confidence: '94% Match',
-            img: {
-              src: imageUrl || (imageBase64 ? imageBase64 : (topTaxon.default_photo?.medium_url || null)),
-              alt: commonName
-            },
-            care: care,
-            description: topTaxon.wikipedia_summary ? topTaxon.wikipedia_summary.replace(/<[^>]*>/g, '') : null,
-            symptoms: isInsectOrPest
-              ? (topTaxon.wikipedia_summary ? topTaxon.wikipedia_summary.replace(/<[^>]*>/g, '').slice(0, 220) + '...' : `Discoloration, lesions, leaf spots, or stunting associated with ${commonName}.`)
-              : `Signs of stress may include leaf yellowing, wilting, or slowed leaf output.`,
-            treatment: isInsectOrPest
-              ? `Apply neem oil spray or insecticidal soap. Prune infected leaves and increase airflow.`
-              : `Provide adequate indirect sunlight, allow topsoil to dry before watering, and maintain appropriate humidity.`,
-            prevention: `Inspect leaf undersides weekly, use clean well-draining soil, and avoid overwatering.`,
-            wikipediaUrl: topTaxon.wikipedia_url || null
-          };
-        }
-
-        // 3. Call Gemini API if Key is available for real vision/chat analysis
+        // 4. Call Gemini API if Key is available for real vision/chat analysis
         if (apiKey) {
           try {
             const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
@@ -670,7 +699,7 @@ const server = http.createServer(async (req, res) => {
           }
         }
 
-        // 4. Construct response message if Gemini wasn't used or returned empty
+        // 5. Construct response message if Gemini wasn't used or returned empty
         if (!aiMessage) {
           if (matchedTaxa) {
             if (cleanPrompt.includes('disease') || cleanPrompt.includes('rot') || cleanPrompt.includes('spot') || cleanPrompt.includes('blight') || cleanPrompt.includes('mildew') || cleanPrompt.includes('pest') || cleanPrompt.includes('yellow') || cleanPrompt.includes('bug')) {
@@ -689,7 +718,7 @@ const server = http.createServer(async (req, res) => {
                 `- ⚠️ **Toxicity:** ${matchedTaxa.care.toxicity}`;
             }
           } else {
-            aiMessage = `I evaluated your request. For accurate plant identification or disease diagnosis, please upload a clear photo of your plant, paste an image URL, or describe the symptoms (e.g. leaf spots, yellowing leaves, pest damage).`;
+            aiMessage = `I evaluated your request. To identify a plant or diagnose a disease, please share a plant name (e.g. *"Monstera care"*), describe symptoms, upload a photo, or paste an image URL!`;
           }
         }
 
