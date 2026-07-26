@@ -680,7 +680,11 @@ const server = http.createServer(async (req, res) => {
               parts.push({ text: `[Analyzed Image URL: ${imageUrl}]` });
             }
 
-            const sysPrompt = "You are Plantio's AI Plant Doctor and Botanical Expert. Identify plants and diagnose plant diseases accurately. Provide friendly, clear, structured care or treatment advice.";
+            let sysPrompt = "You are Plantio's AI Plant Doctor and Botanical Expert. Identify plants and diagnose plant diseases accurately. Provide friendly, clear, structured care or treatment advice.";
+
+            if (matchedTaxa) {
+              sysPrompt += `\n\nReference Species Database Context:\n- Title: ${matchedTaxa.title}\n- Scientific Name: ${matchedTaxa.scientificName}\n- Category: ${matchedTaxa.category}\n- Care Specs: Watering=${matchedTaxa.care.watering}, Light=${matchedTaxa.care.light}, Soil=${matchedTaxa.care.soil}, Difficulty=${matchedTaxa.care.difficulty}\n- Details: ${matchedTaxa.description || matchedTaxa.symptoms}\nUse this live database information to ground your response accurately.`;
+            }
 
             const geminiRes = await fetch(geminiEndpoint, {
               method: 'POST',
