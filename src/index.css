@@ -2308,9 +2308,9 @@ aside {
 
 /* Floating Popover Drawer Window */
 .ai-float-window {
-  width: 410px;
+  width: 440px;
   max-width: calc(100vw - 32px);
-  height: 580px;
+  height: 640px;
   max-height: calc(100vh - 100px);
   background: #ffffff;
   border-radius: 20px;
@@ -2502,7 +2502,13 @@ aside {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
+
+.ai-chat-body::-webkit-scrollbar { width: 5px; }
+.ai-chat-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.ai-chat-body::-webkit-scrollbar-track { background: transparent; }
 
 /* Chat Bubbles */
 .ai-chat-bubble-wrapper {
@@ -2614,24 +2620,37 @@ aside {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+/* Alert theme for Pest / Disease diagnoses — visually distinct from a healthy plant ID */
+.ai-diagnosis-card.is-alert {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
 }
 
 .diagnosis-card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
 }
 
 .diagnosis-thumbnail {
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border-radius: 12px;
   object-fit: cover;
   border: 2px solid #34d399;
+  flex-shrink: 0;
+}
+
+.is-alert .diagnosis-thumbnail {
+  border-color: #f59e0b;
 }
 
 .diagnosis-title-box {
   flex: 1;
+  min-width: 0;
 }
 
 .diagnosis-category-pill {
@@ -2642,29 +2661,64 @@ aside {
   padding: 2px 8px;
   border-radius: 10px;
   text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.diagnosis-category-pill.pill-alert {
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .diagnosis-title-box h4 {
-  margin: 2px 0 0;
-  font-size: 1rem;
+  margin: 4px 0 0;
+  font-size: 1.02rem;
   font-weight: 800;
   color: #064e3b;
+  line-height: 1.25;
 }
 
+.is-alert .diagnosis-title-box h4 { color: #78350f; }
+
 .diagnosis-scientific {
-  margin: 0;
+  margin: 1px 0 0;
   font-size: 0.78rem;
   color: #047857;
+}
+
+.is-alert .diagnosis-scientific { color: #b45309; }
+
+.diagnosis-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .diagnosis-confidence {
   background: #059669;
   color: white;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 800;
   padding: 4px 10px;
   border-radius: 14px;
+  white-space: nowrap;
 }
+
+.is-alert .diagnosis-confidence { background: #d97706; }
+
+.diagnosis-status-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.diagnosis-status-badge.status-healthy { background: #dcfce7; color: #166534; }
+.diagnosis-status-badge.status-diseased { background: #fee2e2; color: #991b1b; }
+.diagnosis-status-badge.status-pest { background: #fef3c7; color: #92400e; }
+.diagnosis-status-badge.status-unclear { background: #e5e7eb; color: #374151; }
 
 .diagnosis-care-grid {
   display: grid;
@@ -2684,6 +2738,33 @@ aside {
 
 .diagnosis-care-grid span { color: #6b7280; font-size: 0.7rem; }
 .diagnosis-care-grid strong { color: #065f46; font-size: 0.78rem; }
+
+/* Symptoms / Treatment / Prevention panel — used for pests, diseases, and unhealthy plants */
+.diagnosis-alert-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.alert-row span {
+  display: block;
+  color: #92400e;
+  font-size: 0.72rem;
+  font-weight: 800;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.alert-row p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #374151;
+  line-height: 1.45;
+}
 
 .diagnosis-card-actions {
   display: flex;
@@ -2764,7 +2845,13 @@ aside {
   overflow-x: auto;
   background: #ffffff;
   border-top: 1px solid rgba(0, 0, 0, 0.05);
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
+
+.ai-quick-chips::-webkit-scrollbar { height: 4px; }
+.ai-quick-chips::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.ai-quick-chips::-webkit-scrollbar-track { background: transparent; }
 
 .ai-quick-chips button {
   white-space: nowrap;

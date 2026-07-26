@@ -256,53 +256,96 @@ export default function AIChat({ isEmbedded = false }) {
               </div>
 
               {/* Diagnostic AI Result Card */}
-              {msg.diagnosis && (
-                <div className="ai-diagnosis-card">
-                  <div className="diagnosis-card-header">
-                    {msg.diagnosis.img?.src && (
-                      <img src={msg.diagnosis.img.src} alt={msg.diagnosis.title} className="diagnosis-thumbnail" />
+              {msg.diagnosis && (() => {
+                const d = msg.diagnosis;
+                const isPestOrDisease = d.category === "Pest" || d.category === "Disease";
+                const statusMeta = {
+                  "Healthy": { label: "✅ Healthy", className: "status-healthy" },
+                  "Diseased": { label: "⚠️ Diseased", className: "status-diseased" },
+                  "Pest Damage": { label: "🐛 Pest Damage", className: "status-pest" },
+                  "Unclear": { label: "❔ Unclear", className: "status-unclear" }
+                };
+                const status = statusMeta[d.healthStatus];
+                const showAlertDetails = isPestOrDisease || d.healthStatus === "Diseased" || d.healthStatus === "Pest Damage";
+
+                return (
+                  <div className={`ai-diagnosis-card ${isPestOrDisease ? "is-alert" : ""}`}>
+                    <div className="diagnosis-card-header">
+                      {d.img?.src && (
+                        <img src={d.img.src} alt={d.title} className="diagnosis-thumbnail" />
+                      )}
+                      <div className="diagnosis-title-box">
+                        <span className={`diagnosis-category-pill ${isPestOrDisease ? "pill-alert" : ""}`}>{d.category || "Botany"}</span>
+                        <h4>{d.title}</h4>
+                        {d.scientificName && (
+                          <p className="diagnosis-scientific"><em>{d.scientificName}</em></p>
+                        )}
+                      </div>
+                      <div className="diagnosis-badges">
+                        <span className="diagnosis-confidence">{d.confidence || "Match"}</span>
+                        {status && <span className={`diagnosis-status-badge ${status.className}`}>{status.label}</span>}
+                      </div>
+                    </div>
+
+                    {/* Plant Care Specs — shown only for actual plant identifications, never for pests/diseases */}
+                    {!isPestOrDisease && d.care && (
+                      <div className="diagnosis-care-grid">
+                        <div><span>💧 Water</span><strong>{d.care.watering}</strong></div>
+                        <div><span>☀️ Light</span><strong>{d.care.light}</strong></div>
+                        <div><span>🪴 Soil</span><strong>{d.care.soil}</strong></div>
+                        <div><span>⚡ Level</span><strong>{d.care.difficulty}</strong></div>
+                        <div><span>☠️ Toxicity</span><strong>{d.care.toxicity}</strong></div>
+                      </div>
                     )}
-                    <div className="diagnosis-title-box">
-                      <span className="diagnosis-category-pill">{msg.diagnosis.category || "Botany"}</span>
-                      <h4>{msg.diagnosis.title}</h4>
-                      {msg.diagnosis.scientificName && (
-                        <p className="diagnosis-scientific"><em>{msg.diagnosis.scientificName}</em></p>
+
+                    {/* Symptoms / Treatment / Prevention — for pests, diseases, or a plant showing signs of trouble */}
+                    {showAlertDetails && (d.symptoms || d.treatment || d.prevention) && (
+                      <div className="diagnosis-alert-grid">
+                        {d.symptoms && (
+                          <div className="alert-row">
+                            <span>🔍 Symptoms</span>
+                            <p>{d.symptoms}</p>
+                          </div>
+                        )}
+                        {d.treatment && (
+                          <div className="alert-row">
+                            <span>💊 Treatment</span>
+                            <p>{d.treatment}</p>
+                          </div>
+                        )}
+                        {d.prevention && (
+                          <div className="alert-row">
+                            <span>🛡️ Prevention</span>
+                            <p>{d.prevention}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Card Actions */}
+                    <div className="diagnosis-card-actions">
+                      {!isPestOrDisease && (
+                        <button
+                          onClick={() => handleAddToMyPlants(d)}
+                          className="add-to-garden-btn"
+                        >
+                          ➕ Add to My Plants
+                        </button>
+                      )}
+                      {d.wikipediaUrl && (
+                        <a
+                          href={d.wikipediaUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="wiki-link-btn"
+                        >
+                          📖 Wikipedia Details
+                        </a>
                       )}
                     </div>
-                    <span className="diagnosis-confidence">{msg.diagnosis.confidence || "High Match"}</span>
                   </div>
-
-                  {/* Care Specifications */}
-                  {msg.diagnosis.care && (
-                    <div className="diagnosis-care-grid">
-                      <div><span>💧 Water</span><strong>{msg.diagnosis.care.watering}</strong></div>
-                      <div><span>☀️ Light</span><strong>{msg.diagnosis.care.light}</strong></div>
-                      <div><span>🪴 Soil</span><strong>{msg.diagnosis.care.soil}</strong></div>
-                      <div><span>⚡ Level</span><strong>{msg.diagnosis.care.difficulty}</strong></div>
-                    </div>
-                  )}
-
-                  {/* Card Actions */}
-                  <div className="diagnosis-card-actions">
-                    <button
-                      onClick={() => handleAddToMyPlants(msg.diagnosis)}
-                      className="add-to-garden-btn"
-                    >
-                      ➕ Add to My Plants
-                    </button>
-                    {msg.diagnosis.wikipediaUrl && (
-                      <a
-                        href={msg.diagnosis.wikipediaUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="wiki-link-btn"
-                      >
-                        📖 Wikipedia Details
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           </div>
         ))}
