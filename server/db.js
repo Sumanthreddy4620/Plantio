@@ -9,7 +9,14 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false }
+  auth: { persistSession: false, autoRefreshToken: false },
+  db: { schema: 'public' },
+  global: {
+    headers: {
+      'Accept-Profile': 'public',
+      'Content-Profile': 'public'
+    }
+  }
 });
 
 console.log('✅ Supabase client ready');
