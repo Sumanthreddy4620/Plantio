@@ -52,7 +52,7 @@ export default function App() {
       </Routes>
 
       {!shouldHideHeader && <Footer />}
-      <AIChatModal />
+      {!shouldHideHeader && <AIChatModal />}
     </>
   );
 }

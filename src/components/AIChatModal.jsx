@@ -1,11 +1,30 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import AIChat from "./AIChat";
 
 export default function AIChatModal() {
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  // Close the widget whenever the user clicks/taps anywhere outside of it
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleOutsideClick = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+    };
+  }, [isOpen]);
 
   return (
-    <div className="ai-float-widget-container">
+    <div className="ai-float-widget-container" ref={containerRef}>
       {/* Floating Drawer Chat Window */}
       {isOpen && (
         <div className="ai-float-window">

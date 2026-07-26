@@ -70,7 +70,20 @@ export default function AIChat({ isEmbedded = false }) {
   // Submit AI Request
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!inputPrompt.trim() && !imageUrl.trim() && !photoBase64) {
+
+    // If the user typed/pasted a URL straight into the message box (instead of using
+    // the 🔗 link button), treat it exactly the same as an attached image link.
+    let effectivePrompt = inputPrompt;
+    let effectiveImageUrl = imageUrl;
+    if (!imageUrl.trim() && !photoBase64) {
+      const urlMatch = inputPrompt.match(/https?:\/\/\S+/i);
+      if (urlMatch) {
+        effectiveImageUrl = urlMatch[0];
+        effectivePrompt = inputPrompt.replace(urlMatch[0], "").trim();
+      }
+    }
+
+    if (!effectivePrompt.trim() && !effectiveImageUrl.trim() && !photoBase64) {
       handleToast("⚠️ Please enter a text message, attach a photo, or paste an image URL.");
       return;
     }
@@ -78,15 +91,15 @@ export default function AIChat({ isEmbedded = false }) {
     const userMessage = {
       id: `msg_user_${Date.now()}`,
       sender: "user",
-      text: inputPrompt.trim() || (photoBase64 ? "Attached photo for identification" : "Analyzed image URL"),
-      imageUrl: imageUrl.trim() || null,
+      text: effectivePrompt.trim() || (photoBase64 ? "Attached photo for identification" : "Analyzed image URL"),
+      imageUrl: effectiveImageUrl.trim() || null,
       imageBase64: photoBase64 || null,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    const currentPrompt = inputPrompt;
-    const currentUrl = imageUrl;
+    const currentPrompt = effectivePrompt;
+    const currentUrl = effectiveImageUrl;
     const currentBase64 = photoBase64;
 
     // Reset inputs
