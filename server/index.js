@@ -42,7 +42,7 @@ function getJsonBody(req) {
   });
 }
 
-// Helper to authenticate request (async for MongoDB)
+// Helper to authenticate request (async for Supabase)
 async function authenticate(req) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -60,7 +60,7 @@ async function authenticate(req) {
     if (!user) return null;
 
     return {
-      id: user._id ? user._id.toString() : user.id,
+      id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email
@@ -582,7 +582,7 @@ const server = http.createServer(async (req, res) => {
       });
 
       const userObj = {
-        id: newUser._id ? newUser._id.toString() : newUser.id,
+        id: newUser.id,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
         email: newUser.email
@@ -618,7 +618,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       const userObj = {
-        id: user._id ? user._id.toString() : user.id,
+        id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email
