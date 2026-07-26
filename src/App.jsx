@@ -16,7 +16,6 @@ import Signup from "./components/Signup";
 import PlantDetail from "./components/PlantDetail";
 import DiseaseDetail from "./components/DiseaseDetail";
 import BlogDetail from "./components/BlogDetail";
-import AIChat from "./components/AIChat";
 import AIChatModal from "./components/AIChatModal";
 import NotFound from "./components/NotFound";
 
@@ -47,7 +46,6 @@ export default function App() {
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogDetail />} />
         <Route path="/your-plants" element={<YourPlants />} />
-        <Route path="/ai-chat" element={<AIChat />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="*" element={<NotFound />} />

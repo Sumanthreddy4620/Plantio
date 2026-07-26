@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import AIChat from "./AIChat";
 
 export default function AIChatModal() {
@@ -16,9 +15,6 @@ export default function AIChatModal() {
               <h3>Plantio AI Doctor</h3>
             </div>
             <div className="ai-float-actions">
-              <Link to="/ai-chat" onClick={() => setIsOpen(false)} className="expand-btn" title="Open Fullscreen View">
-                ⤢ Fullscreen
-              </Link>
               <button onClick={() => setIsOpen(false)} className="close-float-btn" title="Close Chat Drawer">
                 ✕
               </button>

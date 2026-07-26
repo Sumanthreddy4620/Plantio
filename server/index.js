@@ -164,6 +164,113 @@ function getPlantCareDetails(item) {
   return { watering, light, soil, toxicity, difficulty };
 }
 
+// Fetch a remote image and convert it to a base64 data payload for vision analysis.
+// Guards against oversized downloads and non-image responses.
+async function fetchImageAsBase64(imageUrl) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch(imageUrl, {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'Plantio/1.0 (plant identification)' }
+    });
+    if (!res.ok) throw new Error(`Image fetch failed with status ${res.status}`);
+
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType && !contentType.startsWith('image/')) {
+      throw new Error('The provided URL does not point to a direct image file.');
+    }
+
+    const contentLength = Number(res.headers.get('content-length') || '0');
+    if (contentLength && contentLength > 8 * 1024 * 1024) {
+      throw new Error('Image exceeds 8MB size limit.');
+    }
+
+    const arrayBuffer = await res.arrayBuffer();
+    if (arrayBuffer.byteLength > 8 * 1024 * 1024) {
+      throw new Error('Image exceeds 8MB size limit.');
+    }
+
+    const base64Data = Buffer.from(arrayBuffer).toString('base64');
+    const mimeType = contentType.startsWith('image/') ? contentType : 'image/jpeg';
+    return { base64Data, mimeType };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// Extract clean JSON from a Gemini text response, tolerating markdown code fences.
+function parseGeminiJson(rawText) {
+  if (!rawText) return null;
+  let cleaned = rawText.trim();
+  cleaned = cleaned.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    // Try to salvage the first {...} block if the model added stray text around it
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (match) {
+      try { return JSON.parse(match[0]); } catch { return null; }
+    }
+    return null;
+  }
+}
+
+// Call Gemini's vision model with strict structured JSON output for plant/disease identification.
+async function identifyWithGemini({ apiKey, prompt, base64Data, mimeType, geminiModel }) {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`;
+
+  const instruction = `You are a rigorous plant identification and plant pathology expert powering Plantio's AI Doctor.
+Look carefully at the provided image and respond with ONLY a single JSON object (no markdown, no commentary) matching this exact schema:
+{
+  "isPlantImage": boolean,            // true if the image shows a plant, leaf, flower, or plant pest/disease
+  "commonName": string,               // best-guess common name, or "" if unidentifiable
+  "scientificName": string,           // Latin binomial genus/species, or "" if unsure
+  "category": "Plant" | "Disease" | "Pest",
+  "healthStatus": "Healthy" | "Diseased" | "Pest Damage" | "Unclear",
+  "confidencePercent": number,        // your honest confidence 0-100, be conservative — do not inflate
+  "symptoms": string,                 // observed visual symptoms if diseased/pest-damaged, else ""
+  "treatment": string,                // concrete treatment steps if diseased/pest-damaged, else ""
+  "prevention": string,               // prevention tips
+  "careSummary": string,              // 1-2 sentence general care summary for this species
+  "message": string,                  // a friendly 2-4 sentence explanation for the user, written naturally
+  "notes": string                     // caveats, e.g. "image blurry, low confidence" — "" if none
+}
+Be honest about uncertainty: if the image is blurry, ambiguous, not a plant, or you cannot narrow it down, set isPlantImage/confidencePercent accordingly and explain in "notes" rather than guessing a random species. Never fabricate a scientific name you are not reasonably confident about — use your best partial guess (e.g. genus only) and lower confidencePercent instead.`;
+
+  const parts = [
+    { text: instruction },
+    { inline_data: { mime_type: mimeType, data: base64Data } },
+    { text: prompt ? `User's message/context: ${prompt}` : 'User did not add extra text — analyze the image alone.' }
+  ];
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey
+    },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts }],
+      generationConfig: {
+        temperature: 0.2,
+        responseMimeType: 'application/json'
+      }
+    })
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(`Gemini vision request failed (${res.status}): ${errText.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const parsed = parseGeminiJson(rawText);
+  if (!parsed) throw new Error('Gemini returned a response that could not be parsed as JSON.');
+  return parsed;
+}
+
 const server = http.createServer(async (req, res) => {
   setCorsHeaders(res);
 
@@ -590,56 +697,156 @@ const server = http.createServer(async (req, res) => {
           });
         }
 
-        // 2. Extract target plant noun from user prompt
+        const GEMINI_MODEL = 'gemini-3.6-flash';
+        const hasImage = Boolean(imageBase64 || imageUrl);
+
+        // ═══ PATH A: An image was provided — run real multimodal identification ═══
+        if (hasImage) {
+          let base64Data = null;
+          let mimeType = 'image/jpeg';
+          let imageFetchError = null;
+
+          if (imageBase64) {
+            base64Data = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
+            mimeType = imageBase64.includes('data:') ? imageBase64.split(';')[0].replace('data:', '') : 'image/jpeg';
+          } else if (imageUrl) {
+            try {
+              const fetched = await fetchImageAsBase64(imageUrl);
+              base64Data = fetched.base64Data;
+              mimeType = fetched.mimeType;
+            } catch (fetchErr) {
+              imageFetchError = fetchErr.message;
+            }
+          }
+
+          if (!base64Data) {
+            return sendJson(200, {
+              message: `⚠️ I couldn't load that image (${imageFetchError || 'unknown error'}). Please make sure the URL points directly to an image file (ending in .jpg, .png, etc.), or try uploading the photo instead.`,
+              diagnosis: null,
+              timestamp: new Date().toISOString()
+            });
+          }
+
+          if (!apiKey) {
+            return sendJson(200, {
+              message: `📸 I received your photo, but visual plant identification requires the AI vision service to be configured on the server (missing GEMINI_API_KEY). In the meantime, try describing what you see — leaf shape, color, or symptoms — and I can help from our botanical database.`,
+              diagnosis: null,
+              timestamp: new Date().toISOString()
+            });
+          }
+
+          let geminiResult = null;
+          try {
+            geminiResult = await identifyWithGemini({ apiKey, prompt, base64Data, mimeType, geminiModel: GEMINI_MODEL });
+          } catch (visionErr) {
+            console.error('Gemini vision identification error:', visionErr.message);
+            return sendJson(200, {
+              message: `⚠️ Sorry, I had trouble analyzing that image just now (${visionErr.message}). Could you try again, or upload a clearer, well-lit photo of the leaf/plant?`,
+              diagnosis: null,
+              timestamp: new Date().toISOString()
+            });
+          }
+
+          if (!geminiResult.isPlantImage || !geminiResult.commonName) {
+            return sendJson(200, {
+              message: geminiResult.message || `🤔 I looked closely, but I'm not confident this image shows a clearly identifiable plant, leaf, or plant issue.${geminiResult.notes ? ` (${geminiResult.notes})` : ''} Could you try a closer, well-lit photo of the leaves or affected area?`,
+              diagnosis: null,
+              timestamp: new Date().toISOString()
+            });
+          }
+
+          // Cross-reference Gemini's identification with the live iNaturalist database
+          // for an authoritative photo, taxonomy, and Wikipedia link.
+          let inatTaxon = null;
+          const lookupName = geminiResult.scientificName || geminiResult.commonName;
+          try {
+            const inatRes = await fetch(
+              `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams({ q: lookupName, per_page: 3, locale: 'en' }),
+              { headers: { 'Accept': 'application/json', 'User-Agent': 'Plantio/1.0' } }
+            );
+            if (inatRes.ok) {
+              const inatData = await inatRes.json();
+              inatTaxon = (inatData.results || [])[0] || null;
+            }
+          } catch (e) {
+            console.error('iNaturalist cross-reference error:', e.message);
+          }
+
+          const care = inatTaxon ? getPlantCareDetails(inatTaxon) : getPlantCareDetails({
+            preferred_common_name: geminiResult.commonName,
+            name: geminiResult.scientificName,
+            wikipedia_summary: geminiResult.careSummary
+          });
+
+          const confidencePercent = Math.max(0, Math.min(100, Math.round(Number(geminiResult.confidencePercent) || 0)));
+          const isDiseaseOrPest = geminiResult.category === 'Disease' || geminiResult.category === 'Pest' || geminiResult.healthStatus === 'Diseased' || geminiResult.healthStatus === 'Pest Damage';
+
+          matchedTaxa = {
+            id: inatTaxon ? `inat_${inatTaxon.id}` : `gemini_${Date.now()}`,
+            title: geminiResult.commonName,
+            scientificName: geminiResult.scientificName || (inatTaxon ? inatTaxon.name : ''),
+            category: geminiResult.category || (inatTaxon ? getPlantCategory(inatTaxon) : 'Plant'),
+            confidence: `${confidencePercent}% Match`,
+            img: {
+              src: imageUrl || imageBase64 || inatTaxon?.default_photo?.medium_url || null,
+              alt: geminiResult.commonName
+            },
+            care,
+            description: geminiResult.careSummary || (inatTaxon?.wikipedia_summary ? inatTaxon.wikipedia_summary.replace(/<[^>]*>/g, '') : null),
+            symptoms: geminiResult.symptoms || '',
+            treatment: geminiResult.treatment || '',
+            prevention: geminiResult.prevention || '',
+            wikipediaUrl: inatTaxon?.wikipedia_url || null,
+            healthStatus: geminiResult.healthStatus || 'Unclear'
+          };
+
+          let aiMessage = geminiResult.message || '';
+          if (isDiseaseOrPest && (geminiResult.symptoms || geminiResult.treatment)) {
+            aiMessage += `\n\n**Symptoms observed:** ${geminiResult.symptoms || 'N/A'}\n\n**Treatment:** ${geminiResult.treatment || 'N/A'}\n\n**Prevention:** ${geminiResult.prevention || 'N/A'}`;
+          }
+          if (confidencePercent < 50) {
+            aiMessage += `\n\n_Note: My confidence on this one is moderate (${confidencePercent}%) — a clearer or closer photo would help me be more precise._`;
+          }
+
+          return sendJson(200, {
+            message: aiMessage.trim(),
+            diagnosis: matchedTaxa,
+            timestamp: new Date().toISOString()
+          });
+        }
+
+        // ═══ PATH B: Text-only query — search the live botanical database by keyword ═══
+
+        // Extract target plant noun from user prompt
         let searchKeywords = prompt.replace(/[^\w\s]/gi, ' ').trim();
 
-        // Remove common prompt fillers & question words
         const promptFillers = [
           'what', 'is', 'this', 'plant', 'disease', 'how', 'to', 'treat', 'can', 'you',
           'identify', 'name', 'of', 'my', 'the', 'leaves', 'with', 'spots', 'yellow',
           'brown', 'on', 'please', 'tell', 'me', 'hello', 'hi', 'hey', 'why', 'are',
           'should', 'about', 'some', 'give', 'information', 'for', 'schedule', 'routine',
-          'water', 'watering', 'sunlight', 'light', 'soil', 'fertilizer', 'care',
-          'photo', 'picture', 'image', 'pic', 'snapshot', 'camera', 'file', 'attached', 'link', 'url'
+          'water', 'watering', 'sunlight', 'light', 'soil', 'fertilizer', 'care'
         ];
 
         let extractedTokens = searchKeywords.split(/\s+/).filter(w => w.length > 2 && !promptFillers.includes(w.toLowerCase()));
-
-        // If extractedTokens is empty (e.g. user typed "cactus"), keep all tokens that are not generic photo words
-        if (extractedTokens.length === 0) {
-          const genericWords = ['what', 'is', 'this', 'plant', 'photo', 'picture', 'image', 'pic', 'snapshot', 'file', 'attached', 'link', 'url', 'please', 'tell', 'me'];
-          extractedTokens = searchKeywords.split(/\s+/).filter(w => w.length > 2 && !genericWords.includes(w.toLowerCase()));
-        }
-
-        // Handle common typos like "catcus" -> "cactus"
-        let rawQuery = extractedTokens.join(' ') || searchKeywords;
+        let rawQuery = extractedTokens.join(' ');
         if (rawQuery.toLowerCase() === 'catcus') rawQuery = 'cactus';
 
-        // Extract potential plant name hint from Image URL
-        let urlHint = '';
-        if (imageUrl) {
-          try {
-            const urlPath = new URL(imageUrl).pathname.toLowerCase();
-            const fileName = urlPath.split('/').pop().replace(/\.[^/.]+$/, "").replace(/[_-]/g, ' ');
-            const urlTokens = fileName.split(/\s+/).filter(w => w.length > 2 && !promptFillers.includes(w));
-            if (urlTokens.length > 0) urlHint = urlTokens.join(' ');
-          } catch (e) {}
-        }
-
-        let queryTerm = rawQuery || urlHint || 'Sunflower';
         const isInsectOrPestQuery = cleanPrompt.includes('pest') || cleanPrompt.includes('bug') || cleanPrompt.includes('aphid') || cleanPrompt.includes('mite') || cleanPrompt.includes('beetle');
 
-        // 3. Query live iNaturalist API
+        // If we truly have no usable keyword, don't guess a random species — ask for clarification.
+        if (!rawQuery || rawQuery.length < 3) {
+          return sendJson(200, {
+            message: `I'd love to help! Could you share a plant name (e.g. *"Monstera care"*), describe what you're seeing (e.g. *"yellow spots on tomato leaves"*), or upload/paste a photo so I can identify it accurately?`,
+            diagnosis: null,
+            timestamp: new Date().toISOString()
+          });
+        }
+
         let inatTaxa = [];
         try {
-          const searchParams = {
-            q: queryTerm,
-            per_page: 5,
-            locale: 'en'
-          };
-          if (!isInsectOrPestQuery) {
-            searchParams.iconic_taxa = 'Plantae';
-          }
+          const searchParams = { q: rawQuery, per_page: 5, locale: 'en' };
+          if (!isInsectOrPestQuery) searchParams.iconic_taxa = 'Plantae';
 
           const inatRes = await fetch(
             `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams(searchParams),
@@ -653,93 +860,66 @@ const server = http.createServer(async (req, res) => {
           console.error('iNaturalist API search error in AI Chat:', e.message);
         }
 
-        // Select top taxon returned by iNaturalist (handles typos and scientific taxonomy)
         const topTaxon = inatTaxa[0];
 
-          if (topTaxon && (queryTerm.length > 2 || imageUrl || imageBase64)) {
-            const care = getPlantCareDetails(topTaxon);
-            const commonName = topTaxon.preferred_common_name
-              ? topTaxon.preferred_common_name.charAt(0).toUpperCase() + topTaxon.preferred_common_name.slice(1)
-              : topTaxon.name;
-            const isInsectOrPest = (topTaxon.iconic_taxon_name === 'Insecta' || topTaxon.iconic_taxon_name === 'Arachnida' || cleanPrompt.includes('pest') || cleanPrompt.includes('bug') || cleanPrompt.includes('disease') || cleanPrompt.includes('spot') || cleanPrompt.includes('rot') || cleanPrompt.includes('blight') || cleanPrompt.includes('mildew'));
+        if (topTaxon) {
+          const care = getPlantCareDetails(topTaxon);
+          const commonName = topTaxon.preferred_common_name
+            ? topTaxon.preferred_common_name.charAt(0).toUpperCase() + topTaxon.preferred_common_name.slice(1)
+            : topTaxon.name;
+          const isInsectOrPest = (topTaxon.iconic_taxon_name === 'Insecta' || topTaxon.iconic_taxon_name === 'Arachnida' || cleanPrompt.includes('pest') || cleanPrompt.includes('bug') || cleanPrompt.includes('disease') || cleanPrompt.includes('spot') || cleanPrompt.includes('rot') || cleanPrompt.includes('blight') || cleanPrompt.includes('mildew'));
 
-            matchedTaxa = {
-              id: `inat_${topTaxon.id}`,
-              title: commonName,
-              scientificName: topTaxon.name,
-              category: isInsectOrPest ? (topTaxon.iconic_taxon_name === 'Insecta' ? 'Pest' : 'Disease') : getPlantCategory(topTaxon),
-              confidence: '94% Match',
-              img: {
-                src: imageUrl || (imageBase64 ? imageBase64 : (topTaxon.default_photo?.medium_url || null)),
-                alt: commonName
-              },
-              care: care,
-              description: topTaxon.wikipedia_summary ? topTaxon.wikipedia_summary.replace(/<[^>]*>/g, '') : null,
-              symptoms: isInsectOrPest
-                ? (topTaxon.wikipedia_summary ? topTaxon.wikipedia_summary.replace(/<[^>]*>/g, '').slice(0, 220) + '...' : `Discoloration, lesions, leaf spots, or stunting associated with ${commonName}.`)
-                : `Signs of stress may include leaf yellowing, wilting, or slowed leaf output.`,
-              treatment: isInsectOrPest
-                ? `Apply neem oil spray or insecticidal soap. Prune infected leaves and increase airflow.`
-                : `Provide adequate indirect sunlight, allow topsoil to dry before watering, and maintain appropriate humidity.`,
-              prevention: `Inspect leaf undersides weekly, use clean well-draining soil, and avoid overwatering.`,
-              wikipediaUrl: topTaxon.wikipedia_url || null
-            };
-          }
+          matchedTaxa = {
+            id: `inat_${topTaxon.id}`,
+            title: commonName,
+            scientificName: topTaxon.name,
+            category: isInsectOrPest ? (topTaxon.iconic_taxon_name === 'Insecta' ? 'Pest' : 'Disease') : getPlantCategory(topTaxon),
+            confidence: 'Database Match',
+            img: { src: topTaxon.default_photo?.medium_url || null, alt: commonName },
+            care,
+            description: topTaxon.wikipedia_summary ? topTaxon.wikipedia_summary.replace(/<[^>]*>/g, '') : null,
+            symptoms: isInsectOrPest
+              ? (topTaxon.wikipedia_summary ? topTaxon.wikipedia_summary.replace(/<[^>]*>/g, '').slice(0, 220) + '...' : `Discoloration, lesions, leaf spots, or stunting associated with ${commonName}.`)
+              : `Signs of stress may include leaf yellowing, wilting, or slowed leaf output.`,
+            treatment: isInsectOrPest
+              ? `Apply neem oil spray or insecticidal soap. Prune infected leaves and increase airflow.`
+              : `Provide adequate indirect sunlight, allow topsoil to dry before watering, and maintain appropriate humidity.`,
+            prevention: `Inspect leaf undersides weekly, use clean well-draining soil, and avoid overwatering.`,
+            wikipediaUrl: topTaxon.wikipedia_url || null
+          };
         }
 
-        // 4. Call Gemini API if Key is available for real vision/chat analysis
+        aiMessage = '';
+
+        // Optionally ask Gemini (text-only) to compose a friendlier grounded reply
         if (apiKey) {
           try {
-            const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-            const parts = [];
-
-            if (prompt) {
-              parts.push({ text: prompt });
-            } else {
-              parts.push({ text: "Please identify this plant or plant disease from the provided image and give care/treatment advice." });
-            }
-
-            if (imageBase64) {
-              const base64Data = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
-              const mimeType = imageBase64.includes('data:') ? imageBase64.split(';')[0].replace('data:', '') : 'image/jpeg';
-              parts.push({
-                inline_data: {
-                  mime_type: mimeType,
-                  data: base64Data
-                }
-              });
-            } else if (imageUrl) {
-              parts.push({ text: `[Analyzed Image URL: ${imageUrl}]` });
-            }
-
-            let sysPrompt = "You are Plantio's AI Plant Doctor and Botanical Expert. Identify plants and diagnose plant diseases accurately. Provide friendly, clear, structured care or treatment advice.";
-
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+            let sysPrompt = "You are Plantio's AI Plant Doctor and Botanical Expert. Answer clearly and concisely with structured, friendly care/treatment advice.";
             if (matchedTaxa) {
-              sysPrompt += `\n\nReference Species Database Context:\n- Title: ${matchedTaxa.title}\n- Scientific Name: ${matchedTaxa.scientificName}\n- Category: ${matchedTaxa.category}\n- Care Specs: Watering=${matchedTaxa.care.watering}, Light=${matchedTaxa.care.light}, Soil=${matchedTaxa.care.soil}, Difficulty=${matchedTaxa.care.difficulty}\n- Details: ${matchedTaxa.description || matchedTaxa.symptoms}\nUse this live database information to ground your response accurately.`;
+              sysPrompt += `\n\nReference Species Database Context:\n- Title: ${matchedTaxa.title}\n- Scientific Name: ${matchedTaxa.scientificName}\n- Category: ${matchedTaxa.category}\n- Care Specs: Watering=${matchedTaxa.care.watering}, Light=${matchedTaxa.care.light}, Soil=${matchedTaxa.care.soil}, Difficulty=${matchedTaxa.care.difficulty}\n- Details: ${matchedTaxa.description || matchedTaxa.symptoms}\nGround your response in this live database information — do not contradict it.`;
             }
-
-            const geminiRes = await fetch(geminiEndpoint, {
+            const geminiRes = await fetch(endpoint, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
               body: JSON.stringify({
-                contents: [{ role: 'user', parts: [{ text: sysPrompt }, ...parts] }]
+                contents: [{ role: 'user', parts: [{ text: sysPrompt }, { text: prompt }] }],
+                generationConfig: { temperature: 0.4 }
               })
             });
-
             if (geminiRes.ok) {
               const geminiData = await geminiRes.json();
               aiMessage = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
             }
           } catch (gErr) {
-            console.error('Gemini API call error:', gErr.message);
+            console.error('Gemini text chat error:', gErr.message);
           }
         }
 
-        // 5. Construct response message if Gemini wasn't used or returned empty
         if (!aiMessage) {
           if (matchedTaxa) {
             if (cleanPrompt.includes('disease') || cleanPrompt.includes('rot') || cleanPrompt.includes('spot') || cleanPrompt.includes('blight') || cleanPrompt.includes('mildew') || cleanPrompt.includes('pest') || cleanPrompt.includes('yellow') || cleanPrompt.includes('bug')) {
-              aiMessage = `Based on your query and live plant database search, I've identified potential diagnostic details for **${matchedTaxa.title}** (*${matchedTaxa.scientificName}*).\n\n` +
+              aiMessage = `Based on our live plant database search, here's what I found for **${matchedTaxa.title}** (*${matchedTaxa.scientificName}*).\n\n` +
                 `**Symptoms:** ${matchedTaxa.symptoms}\n\n` +
                 `**Treatment Recommendation:** ${matchedTaxa.treatment}\n\n` +
                 `**Prevention:** ${matchedTaxa.prevention}`;
@@ -754,7 +934,7 @@ const server = http.createServer(async (req, res) => {
                 `- ⚠️ **Toxicity:** ${matchedTaxa.care.toxicity}`;
             }
           } else {
-            aiMessage = `I evaluated your request. To identify a plant or diagnose a disease, please share a plant name (e.g. *"Monstera care"*), describe symptoms, upload a photo, or paste an image URL!`;
+            aiMessage = `I searched our live botanical database for "${rawQuery}" but couldn't find a confident match. Could you double check the spelling, or upload a photo instead so I can identify it visually?`;
           }
         }
 
