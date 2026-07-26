@@ -590,58 +590,71 @@ const server = http.createServer(async (req, res) => {
           });
         }
 
-        // 2. Extract meaningful botanical search tokens
-        let searchKeywords = prompt.replace(/[^\w\s]/gi, '').trim();
-        const stopWords = [
+        // 2. Extract target plant noun from user prompt
+        let searchKeywords = prompt.replace(/[^\w\s]/gi, ' ').trim();
+
+        // Remove common prompt fillers & question words
+        const promptFillers = [
           'what', 'is', 'this', 'plant', 'disease', 'how', 'to', 'treat', 'can', 'you',
           'identify', 'name', 'of', 'my', 'the', 'leaves', 'with', 'spots', 'yellow',
           'brown', 'on', 'please', 'tell', 'me', 'hello', 'hi', 'hey', 'why', 'are',
-          'should', 'water', 'care', 'about', 'some', 'give', 'information',
+          'should', 'about', 'some', 'give', 'information', 'for', 'schedule', 'routine',
+          'water', 'watering', 'sunlight', 'light', 'soil', 'fertilizer', 'care',
           'photo', 'picture', 'image', 'pic', 'snapshot', 'camera', 'file', 'attached', 'link', 'url'
         ];
-        let keywordTokens = searchKeywords.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w.toLowerCase()));
 
-        // Extract potential plant name hint from Image URL if user prompt has no specific plant name
+        let extractedTokens = searchKeywords.split(/\s+/).filter(w => w.length > 2 && !promptFillers.includes(w.toLowerCase()));
+
+        // If extractedTokens is empty (e.g. user typed "cactus"), keep all tokens that are not generic photo words
+        if (extractedTokens.length === 0) {
+          const genericWords = ['what', 'is', 'this', 'plant', 'photo', 'picture', 'image', 'pic', 'snapshot', 'file', 'attached', 'link', 'url', 'please', 'tell', 'me'];
+          extractedTokens = searchKeywords.split(/\s+/).filter(w => w.length > 2 && !genericWords.includes(w.toLowerCase()));
+        }
+
+        // Handle common typos like "catcus" -> "cactus"
+        let rawQuery = extractedTokens.join(' ') || searchKeywords;
+        if (rawQuery.toLowerCase() === 'catcus') rawQuery = 'cactus';
+
+        // Extract potential plant name hint from Image URL
         let urlHint = '';
         if (imageUrl) {
           try {
             const urlPath = new URL(imageUrl).pathname.toLowerCase();
             const fileName = urlPath.split('/').pop().replace(/\.[^/.]+$/, "").replace(/[_-]/g, ' ');
-            const urlTokens = fileName.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
+            const urlTokens = fileName.split(/\s+/).filter(w => w.length > 2 && !promptFillers.includes(w));
             if (urlTokens.length > 0) urlHint = urlTokens.join(' ');
           } catch (e) {}
         }
 
-        let queryTerm = keywordTokens.slice(0, 3).join(' ') || urlHint;
+        let queryTerm = rawQuery || urlHint || 'Sunflower';
         const isInsectOrPestQuery = cleanPrompt.includes('pest') || cleanPrompt.includes('bug') || cleanPrompt.includes('aphid') || cleanPrompt.includes('mite') || cleanPrompt.includes('beetle');
 
-        // 3. Query live iNaturalist API (strictly filter for Plantae unless pest query)
-        if (queryTerm || imageUrl || imageBase64) {
-          let inatTaxa = [];
-          try {
-            const searchParams = {
-              q: queryTerm || 'Sunflower',
-              per_page: 5,
-              locale: 'en'
-            };
-            if (!isInsectOrPestQuery) {
-              searchParams.iconic_taxa = 'Plantae';
-            }
-
-            const inatRes = await fetch(
-              `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams(searchParams),
-              { headers: { 'Accept': 'application/json', 'User-Agent': 'Plantio/1.0' } }
-            );
-            if (inatRes.ok) {
-              const inatData = await inatRes.json();
-              inatTaxa = inatData.results || [];
-            }
-          } catch (e) {
-            console.error('iNaturalist API search error in AI Chat:', e.message);
+        // 3. Query live iNaturalist API
+        let inatTaxa = [];
+        try {
+          const searchParams = {
+            q: queryTerm,
+            per_page: 5,
+            locale: 'en'
+          };
+          if (!isInsectOrPestQuery) {
+            searchParams.iconic_taxa = 'Plantae';
           }
 
-          // Only accept taxon if common name matches or query matches
-          const topTaxon = inatTaxa.find(t => t.preferred_common_name && (queryTerm ? t.preferred_common_name.toLowerCase().includes(queryTerm) || t.name.toLowerCase().includes(queryTerm) : true)) || inatTaxa[0];
+          const inatRes = await fetch(
+            `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams(searchParams),
+            { headers: { 'Accept': 'application/json', 'User-Agent': 'Plantio/1.0' } }
+          );
+          if (inatRes.ok) {
+            const inatData = await inatRes.json();
+            inatTaxa = inatData.results || [];
+          }
+        } catch (e) {
+          console.error('iNaturalist API search error in AI Chat:', e.message);
+        }
+
+        // Select top taxon returned by iNaturalist (handles typos and scientific taxonomy)
+        const topTaxon = inatTaxa[0];
 
           if (topTaxon && (queryTerm.length > 2 || imageUrl || imageBase64)) {
             const care = getPlantCareDetails(topTaxon);
