@@ -192,9 +192,10 @@ const server = http.createServer(async (req, res) => {
       const categoryParam = url.searchParams.get('category') || 'All';
       const perPage = 30;
 
-      // iNaturalist taxa endpoint — filter to Plantae kingdom (id 47126)
+      // iNaturalist taxa endpoint — filter strictly to Kingdom Plantae (taxon_id 47126)
       const inatUrl = `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams({
         q: search || 'plant',
+        taxon_id: '47126', // Kingdom Plantae ID in iNaturalist
         rank: 'species',
         iconic_taxa: 'Plantae',
         per_page: perPage,
@@ -210,8 +211,29 @@ const server = http.createServer(async (req, res) => {
         const inatData = await inatRes.json();
 
         if (inatData && Array.isArray(inatData.results)) {
+          const nonPlantKeywords = [
+            'bird', 'fowl', 'duck', 'goose', 'hawk', 'eagle', 'sparrow', 'robin',
+            'bug', 'beetle', 'fly', 'moth', 'butterfly', 'aphid', 'mite', 'caterpillar', 'worm', 'insect', 'pest', 'flea', 'louse',
+            'rot', 'blight', 'gall', 'canker', 'wilt', 'virus', 'spot', 'mildew', 'rust', 'fungus', 'mold'
+          ];
+
           const mappedPlants = inatData.results
-            .filter(item => item.preferred_common_name) // only include plants with common names
+            .filter(item => {
+              if (!item.preferred_common_name && !item.common_name) return false;
+              // Ensure it belongs strictly to Kingdom Plantae
+              if (item.iconic_taxon_name && item.iconic_taxon_name !== 'Plantae') return false;
+
+              const titleLower = (item.preferred_common_name || item.common_name || '').toLowerCase();
+              const sciLower = (item.name || '').toLowerCase();
+
+              // Exclude non-plants (birds, animals, pests, insects, diseases)
+              for (const kw of nonPlantKeywords) {
+                if (titleLower.includes(kw) || sciLower.includes(kw)) {
+                  return false;
+                }
+              }
+              return true;
+            })
             .map(item => {
               const care = getPlantCareDetails(item);
               return {
