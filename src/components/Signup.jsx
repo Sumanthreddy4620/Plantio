@@ -86,17 +86,10 @@ export default function Signup() {
         token = "demo_token_" + Date.now();
       }
 
-      // Save token and non-sensitive user profile in localStorage so signup persists on page reloads
-      localStorage.setItem("plantio_token", token);
-      localStorage.setItem("plantio_user", JSON.stringify(userObj));
-      sessionStorage.setItem("plantio_token", token);
-      sessionStorage.setItem("plantio_user", JSON.stringify(userObj));
-
-      // Dispatch window event so Header updates
-      window.dispatchEvent(new Event("storage"));
-
-      // Redirect to Your Plants page
-      navigate("/your-plants");
+      // Redirect to login page so new user logs in manually with credentials
+      navigate("/login", {
+        state: { message: "Account created successfully! Please log in with your credentials." },
+      });
     } catch (err) {
       setApiError(err.message);
     } finally {

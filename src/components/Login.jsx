@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import plantLogo from "../assets/plant.svg";
 import API_BASE_URL from "../config";
 
@@ -9,6 +9,8 @@ export default function Login() {
   const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const successMessage = location.state?.message || "";
 
   function handleChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -120,6 +122,12 @@ export default function Login() {
         <div className="auth-form-panel">
           <h2>Log in</h2>
           <p className="auth-subtitle">Good to see you again!</p>
+
+          {successMessage && (
+            <p style={{ background: "#dcfce7", color: "#166534", border: "1px solid #bbf7d0", padding: "10px 14px", borderRadius: "8px", marginBottom: "14px", fontSize: "0.88rem", fontWeight: "600" }}>
+              🌱 {successMessage}
+            </p>
+          )}
 
           {apiError && <p className="form-error" style={{ marginBottom: "12px" }}>⚠ {apiError}</p>}
 
