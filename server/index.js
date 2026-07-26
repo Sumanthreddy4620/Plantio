@@ -596,21 +596,40 @@ const server = http.createServer(async (req, res) => {
           'what', 'is', 'this', 'plant', 'disease', 'how', 'to', 'treat', 'can', 'you',
           'identify', 'name', 'of', 'my', 'the', 'leaves', 'with', 'spots', 'yellow',
           'brown', 'on', 'please', 'tell', 'me', 'hello', 'hi', 'hey', 'why', 'are',
-          'should', 'water', 'care', 'about', 'some', 'give', 'information'
+          'should', 'water', 'care', 'about', 'some', 'give', 'information',
+          'photo', 'picture', 'image', 'pic', 'snapshot', 'camera', 'file', 'attached', 'link', 'url'
         ];
-        const keywordTokens = searchKeywords.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w.toLowerCase()));
-        const queryTerm = keywordTokens.slice(0, 3).join(' ');
+        let keywordTokens = searchKeywords.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w.toLowerCase()));
 
-        // 3. Query live iNaturalist API if we have a specific query or image
+        // Extract potential plant name hint from Image URL if user prompt has no specific plant name
+        let urlHint = '';
+        if (imageUrl) {
+          try {
+            const urlPath = new URL(imageUrl).pathname.toLowerCase();
+            const fileName = urlPath.split('/').pop().replace(/\.[^/.]+$/, "").replace(/[_-]/g, ' ');
+            const urlTokens = fileName.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
+            if (urlTokens.length > 0) urlHint = urlTokens.join(' ');
+          } catch (e) {}
+        }
+
+        let queryTerm = keywordTokens.slice(0, 3).join(' ') || urlHint;
+        const isInsectOrPestQuery = cleanPrompt.includes('pest') || cleanPrompt.includes('bug') || cleanPrompt.includes('aphid') || cleanPrompt.includes('mite') || cleanPrompt.includes('beetle');
+
+        // 3. Query live iNaturalist API (strictly filter for Plantae unless pest query)
         if (queryTerm || imageUrl || imageBase64) {
           let inatTaxa = [];
           try {
+            const searchParams = {
+              q: queryTerm || 'Sunflower',
+              per_page: 5,
+              locale: 'en'
+            };
+            if (!isInsectOrPestQuery) {
+              searchParams.iconic_taxa = 'Plantae';
+            }
+
             const inatRes = await fetch(
-              `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams({
-                q: queryTerm || 'Plantae',
-                per_page: 5,
-                locale: 'en'
-              }),
+              `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams(searchParams),
               { headers: { 'Accept': 'application/json', 'User-Agent': 'Plantio/1.0' } }
             );
             if (inatRes.ok) {
