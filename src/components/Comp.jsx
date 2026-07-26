@@ -193,7 +193,7 @@ export default function Comp({ searchText }) {
               disabled={loadingMore}
               className="load-more-btn"
             >
-              {loadingMore ? "Loading more species..." : "Load More Plants ↓"}
+              {loadingMore ? "Loading more species..." : "Load More Plants 🌿 ↓"}
             </button>
           </div>
         )}
