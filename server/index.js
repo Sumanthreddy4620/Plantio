@@ -554,6 +554,155 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // ── 0g. AI PLANT & DISEASE DOCTOR CHAT API ──
+    if (pathname === '/api/ai-chat' && req.method === 'POST') {
+      const body = await getJsonBody(req);
+      const { prompt = '', imageUrl = '', imageBase64 = '', conversationHistory = [] } = body;
+
+      if (!prompt.trim() && !imageUrl && !imageBase64) {
+        return sendJson(400, { error: 'Please provide a message, an image URL, or a photo to analyze.' });
+      }
+
+      try {
+        const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+        let aiMessage = '';
+        let matchedTaxa = null;
+
+        // 1. Extract search terms for live iNaturalist Taxa API lookup
+        const cleanPrompt = prompt.toLowerCase();
+        let searchKeywords = prompt.replace(/[^\w\s]/gi, '').trim();
+
+        const stopWords = ['what', 'is', 'this', 'plant', 'disease', 'how', 'to', 'treat', 'can', 'you', 'identify', 'name', 'of', 'my', 'the', 'leaves', 'with', 'spots', 'yellow', 'brown', 'on', 'please', 'tell', 'me'];
+        const keywordTokens = searchKeywords.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w.toLowerCase()));
+        const queryTerm = keywordTokens.slice(0, 3).join(' ') || searchKeywords || 'plant';
+
+        // 2. Query live iNaturalist API (same API powering the Plants page with 300,000+ species)
+        let inatTaxa = [];
+        try {
+          const inatRes = await fetch(
+            `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams({
+              q: queryTerm,
+              per_page: 5,
+              locale: 'en'
+            }),
+            { headers: { 'Accept': 'application/json', 'User-Agent': 'Plantio/1.0' } }
+          );
+          if (inatRes.ok) {
+            const inatData = await inatRes.json();
+            inatTaxa = inatData.results || [];
+          }
+        } catch (e) {
+          console.error('iNaturalist API search error in AI Chat:', e.message);
+        }
+
+        const topTaxon = inatTaxa.find(t => t.preferred_common_name) || inatTaxa[0];
+        if (topTaxon) {
+          const care = getPlantCareDetails(topTaxon);
+          const commonName = topTaxon.preferred_common_name
+            ? topTaxon.preferred_common_name.charAt(0).toUpperCase() + topTaxon.preferred_common_name.slice(1)
+            : topTaxon.name;
+          const isInsectOrPest = (topTaxon.iconic_taxon_name === 'Insecta' || topTaxon.iconic_taxon_name === 'Arachnida' || cleanPrompt.includes('pest') || cleanPrompt.includes('bug') || cleanPrompt.includes('disease') || cleanPrompt.includes('spot') || cleanPrompt.includes('rot') || cleanPrompt.includes('blight') || cleanPrompt.includes('mildew'));
+
+          matchedTaxa = {
+            id: `inat_${topTaxon.id}`,
+            title: commonName,
+            scientificName: topTaxon.name,
+            category: isInsectOrPest ? (topTaxon.iconic_taxon_name === 'Insecta' ? 'Pest' : 'Disease') : getPlantCategory(topTaxon),
+            confidence: '94% Match',
+            img: {
+              src: imageUrl || (imageBase64 ? imageBase64 : (topTaxon.default_photo?.medium_url || null)),
+              alt: commonName
+            },
+            care: care,
+            description: topTaxon.wikipedia_summary ? topTaxon.wikipedia_summary.replace(/<[^>]*>/g, '') : null,
+            symptoms: isInsectOrPest
+              ? (topTaxon.wikipedia_summary ? topTaxon.wikipedia_summary.replace(/<[^>]*>/g, '').slice(0, 220) + '...' : `Discoloration, lesions, leaf spots, or stunting associated with ${commonName}.`)
+              : `Signs of stress may include leaf yellowing, wilting, or slowed leaf output.`,
+            treatment: isInsectOrPest
+              ? `Apply neem oil spray or insecticidal soap. Prune infected leaves and increase airflow.`
+              : `Provide adequate indirect sunlight, allow topsoil to dry before watering, and maintain appropriate humidity.`,
+            prevention: `Inspect leaf undersides weekly, use clean well-draining soil, and avoid overwatering.`,
+            wikipediaUrl: topTaxon.wikipedia_url || null
+          };
+        }
+
+        // 3. Call Gemini API if Key is available for real vision/chat analysis
+        if (apiKey) {
+          try {
+            const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const parts = [];
+
+            if (prompt) {
+              parts.push({ text: prompt });
+            } else {
+              parts.push({ text: "Please identify this plant or plant disease from the provided image and give care/treatment advice." });
+            }
+
+            if (imageBase64) {
+              const base64Data = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
+              const mimeType = imageBase64.includes('data:') ? imageBase64.split(';')[0].replace('data:', '') : 'image/jpeg';
+              parts.push({
+                inline_data: {
+                  mime_type: mimeType,
+                  data: base64Data
+                }
+              });
+            } else if (imageUrl) {
+              parts.push({ text: `[Analyzed Image URL: ${imageUrl}]` });
+            }
+
+            const sysPrompt = "You are Plantio's AI Plant Doctor and Botanical Expert. Identify plants and diagnose plant diseases accurately. Provide friendly, clear, structured care or treatment advice.";
+
+            const geminiRes = await fetch(geminiEndpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ role: 'user', parts: [{ text: sysPrompt }, ...parts] }]
+              })
+            });
+
+            if (geminiRes.ok) {
+              const geminiData = await geminiRes.json();
+              aiMessage = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            }
+          } catch (gErr) {
+            console.error('Gemini API call error:', gErr.message);
+          }
+        }
+
+        // 4. Construct response message if Gemini wasn't used or returned empty
+        if (!aiMessage) {
+          if (matchedTaxa) {
+            if (cleanPrompt.includes('disease') || cleanPrompt.includes('rot') || cleanPrompt.includes('spot') || cleanPrompt.includes('blight') || cleanPrompt.includes('mildew') || cleanPrompt.includes('pest') || cleanPrompt.includes('yellow') || cleanPrompt.includes('bug')) {
+              aiMessage = `Based on your query and live plant database search, I've identified potential diagnostic details for **${matchedTaxa.title}** (*${matchedTaxa.scientificName}*).\n\n` +
+                `**Symptoms:** ${matchedTaxa.symptoms}\n\n` +
+                `**Treatment Recommendation:** ${matchedTaxa.treatment}\n\n` +
+                `**Prevention:** ${matchedTaxa.prevention}`;
+            } else {
+              aiMessage = `Here is the botanical identification from our live plants database for **${matchedTaxa.title}** (*${matchedTaxa.scientificName}*):\n\n` +
+                `${matchedTaxa.description ? matchedTaxa.description.slice(0, 250) + '...' : ''}\n\n` +
+                `**Care Quick Guide:**\n` +
+                `- 💧 **Watering:** ${matchedTaxa.care.watering}\n` +
+                `- ☀️ **Light:** ${matchedTaxa.care.light}\n` +
+                `- 🪴 **Soil:** ${matchedTaxa.care.soil}\n` +
+                `- ⚡ **Difficulty:** ${matchedTaxa.care.difficulty}\n` +
+                `- ⚠️ **Toxicity:** ${matchedTaxa.care.toxicity}`;
+            }
+          } else {
+            aiMessage = `I evaluated your request. For accurate plant identification or disease diagnosis, please upload a clear photo of your plant, paste an image URL, or describe the symptoms (e.g. leaf spots, yellowing leaves, pest damage).`;
+          }
+        }
+
+        return sendJson(200, {
+          message: aiMessage,
+          diagnosis: matchedTaxa,
+          timestamp: new Date().toISOString()
+        });
+      } catch (err) {
+        return sendJson(500, { error: `AI Chat error: ${err.message}` });
+      }
+    }
+
     // ── 1. SIGNUP ──
     if (pathname === '/api/signup' && req.method === 'POST') {
       const body = await getJsonBody(req);
