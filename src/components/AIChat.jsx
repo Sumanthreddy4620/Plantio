@@ -67,11 +67,6 @@ export default function AIChat({ isEmbedded = false }) {
     setShowUrlInput(false);
   };
 
-  // Quick prompt click handler
-  const handlePromptChip = (chipText) => {
-    setInputPrompt(chipText);
-  };
-
   // Submit AI Request
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -366,14 +361,6 @@ export default function AIChat({ isEmbedded = false }) {
         <div ref={chatBottomRef} />
       </div>
 
-      {/* Quick Prompt Chips */}
-      <div className="ai-quick-chips">
-        <button onClick={() => handlePromptChip("🌿 What plant is this? Please identify this photo.")}>🌿 Identify Plant</button>
-        <button onClick={() => handlePromptChip("🍂 Why are my plant leaves turning yellow with brown spots?")}>🍂 Diagnose Leaf Spots</button>
-        <button onClick={() => handlePromptChip("💧 How often should I water my indoor houseplants?")}>💧 Water Schedule</button>
-        <button onClick={() => handlePromptChip("🐛 How do I treat aphids and spider mites organically?")}>🐛 Pest Treatment</button>
-      </div>
-
       {/* Attached Media Chips */}
       {(photoBase64 || imageUrl) && (
         <div className="ai-attachment-preview-bar">
@@ -418,44 +405,61 @@ export default function AIChat({ isEmbedded = false }) {
           style={{ display: "none" }}
         />
 
-        {/* Photo Upload Icon Button */}
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className={`ai-tool-btn ${photoBase64 ? "active" : ""}`}
-          title="Upload Photo / Capture Camera"
-        >
-          📷
-        </button>
+        <div className="ai-input-pill">
+          {/* Photo Upload Icon Button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className={`ai-icon-btn ${photoBase64 ? "active" : ""}`}
+            title="Upload Photo"
+            aria-label="Upload photo"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 8a2 2 0 0 1 2-2h1.2a1 1 0 0 0 .83-.45l.8-1.2A1 1 0 0 1 9.66 4h4.68a1 1 0 0 1 .83.45l.8 1.2a1 1 0 0 0 .83.45H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z" />
+              <circle cx="12" cy="13" r="3.3" />
+            </svg>
+          </button>
 
-        {/* Image URL Icon Button */}
-        <button
-          type="button"
-          onClick={() => setShowUrlInput(!showUrlInput)}
-          className={`ai-tool-btn ${imageUrl ? "active" : ""}`}
-          title="Attach Image Link URL"
-        >
-          🔗
-        </button>
+          {/* Image URL Icon Button */}
+          <button
+            type="button"
+            onClick={() => setShowUrlInput(!showUrlInput)}
+            className={`ai-icon-btn ${imageUrl ? "active" : ""}`}
+            title="Paste Image URL"
+            aria-label="Paste image URL"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9.5 14.5 14.5 9.5" />
+              <path d="M11 6.5 12.4 5.1a3.5 3.5 0 0 1 5 5L16 11.5" />
+              <path d="M13 17.5 11.6 18.9a3.5 3.5 0 0 1-5-5L8 12.5" />
+            </svg>
+          </button>
 
-        {/* Text Prompt Input */}
-        <input
-          type="text"
-          placeholder="Ask AI Doctor, paste image URL, or upload photo..."
-          value={inputPrompt}
-          onChange={(e) => setInputPrompt(e.target.value)}
-          disabled={isLoading}
-          className="ai-chat-input"
-        />
+          <span className="ai-input-divider" />
 
-        {/* Send Submit Button */}
-        <button
-          type="submit"
-          disabled={isLoading || (!inputPrompt.trim() && !imageUrl.trim() && !photoBase64)}
-          className="ai-send-btn"
-        >
-          Send ➔
-        </button>
+          {/* Text Prompt Input */}
+          <input
+            type="text"
+            placeholder="Ask AI Doctor anything..."
+            value={inputPrompt}
+            onChange={(e) => setInputPrompt(e.target.value)}
+            disabled={isLoading}
+            className="ai-chat-input"
+          />
+
+          {/* Send Submit Button */}
+          <button
+            type="submit"
+            disabled={isLoading || (!inputPrompt.trim() && !imageUrl.trim() && !photoBase64)}
+            className="ai-send-btn"
+            aria-label="Send message"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14" />
+              <path d="M13 6l6 6-6 6" />
+            </svg>
+          </button>
+        </div>
       </form>
     </div>
   );
