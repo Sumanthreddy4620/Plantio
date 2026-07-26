@@ -1,168 +1,136 @@
-import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const dbPath = path.resolve(__dirname, 'plantio_db.json');
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error(
-    'Missing Supabase env vars. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in your Render environment variables.'
-  );
+// Initialize DB file if it doesn't exist
+function initDb() {
+  if (!fs.existsSync(dbPath)) {
+    const initialData = {
+      users: [],
+      user_plants: [],
+      nextUserId: 1,
+      nextPlantId: 1
+    };
+    fs.writeFileSync(dbPath, JSON.stringify(initialData, null, 2), 'utf-8');
+    console.log('✅ Created database file at:', dbPath);
+  }
 }
 
-// Use the service role key on the server so RLS policies are bypassed safely
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false }
-});
+initDb();
 
-console.log('✅ Supabase client initialised');
+function readDb() {
+  try {
+    const raw = fs.readFileSync(dbPath, 'utf-8');
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error reading db:', err);
+    return { users: [], user_plants: [], nextUserId: 1, nextPlantId: 1 };
+  }
+}
+
+function writeDb(data) {
+  try {
+    fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Error writing db:', err);
+  }
+}
 
 export const db = {
-
-  // ── Find user by email ─────────────────────────────────────────────────────
+  // Find user by email
   async findUserByEmail(email) {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email.toLowerCase())
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return data;
+    const data = readDb();
+    return data.users.find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
   },
 
-  // ── Find user by id ────────────────────────────────────────────────────────
+  // Find user by id
   async findUserById(id) {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return data;
+    const data = readDb();
+    return data.users.find(u => u.id === Number(id)) || null;
   },
 
-  // ── Create new user ────────────────────────────────────────────────────────
+  // Create new user
   async createUser({ firstName, lastName, email, password }) {
-    const { data, error } = await supabase
-      .from('users')
-      .insert({
-        first_name: firstName,
-        last_name:  lastName,
-        email:      email.toLowerCase(),
-        password,
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    // Return in the shape the rest of the server expects
-    return {
-      id:        data.id,
-      firstName: data.first_name,
-      lastName:  data.last_name,
-      email:     data.email
+    const data = readDb();
+    const newUser = {
+      id: data.nextUserId++,
+      firstName,
+      lastName,
+      email: email.toLowerCase(),
+      password,
+      createdAt: new Date().toISOString()
     };
+    data.users.push(newUser);
+    writeDb(data);
+    return newUser;
   },
 
-  // ── Get plants for a user ──────────────────────────────────────────────────
+  // Get user plants
   async getUserPlants(userId) {
-    const { data, error } = await supabase
-      .from('user_plants')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: true });
-    if (error) throw new Error(error.message);
-    return (data || []).map(p => ({
-      id:               p.id,
-      userId:           p.user_id,
-      title:            p.title,
-      text:             p.text,
-      imgUrl:           p.img_url,
-      wateringFrequency: p.watering_frequency,
-      lastWatered:      p.last_watered,
-      createdAt:        p.created_at
-    }));
+    const data = readDb();
+    return data.user_plants.filter(p => p.userId === Number(userId));
   },
 
-  // ── Create plant ───────────────────────────────────────────────────────────
+  // Create plant
   async createPlant({ userId, title, text, imgUrl, wateringFrequency, lastWatered }) {
-    const { data, error } = await supabase
-      .from('user_plants')
-      .insert({
-        user_id:           userId,
-        title,
-        text:              text || '',
-        img_url:           imgUrl || '',
-        watering_frequency: String(wateringFrequency || 7),
-        last_watered:      lastWatered || new Date().toISOString().split('T')[0],
-        created_at:        new Date().toISOString()
-      })
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return {
-      id:               data.id,
-      userId:           data.user_id,
-      title:            data.title,
-      text:             data.text,
-      imgUrl:           data.img_url,
-      wateringFrequency: data.watering_frequency,
-      lastWatered:      data.last_watered,
-      createdAt:        data.created_at
+    const data = readDb();
+    const newPlant = {
+      id: data.nextPlantId++,
+      userId: Number(userId),
+      title,
+      text: text || '',
+      imgUrl: imgUrl || '',
+      wateringFrequency: String(wateringFrequency || 7),
+      lastWatered: lastWatered || new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString()
     };
+    data.user_plants.push(newPlant);
+    writeDb(data);
+    return newPlant;
   },
 
-  // ── Delete plant ───────────────────────────────────────────────────────────
+  // Delete plant
   async deletePlant(id, userId) {
-    const { error, count } = await supabase
-      .from('user_plants')
-      .delete({ count: 'exact' })
-      .eq('id', id)
-      .eq('user_id', userId);
-    if (error) throw new Error(error.message);
-    return count > 0;
+    const data = readDb();
+    const index = data.user_plants.findIndex(p => p.id === Number(id) && p.userId === Number(userId));
+    if (index !== -1) {
+      data.user_plants.splice(index, 1);
+      writeDb(data);
+      return true;
+    }
+    return false;
   },
 
-  // ── Mark plant as watered today ────────────────────────────────────────────
+  // Water plant
   async waterPlant(id, userId) {
-    const today = new Date().toISOString().split('T')[0];
-    const { data, error } = await supabase
-      .from('user_plants')
-      .update({ last_watered: today })
-      .eq('id', id)
-      .eq('user_id', userId)
-      .select()
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return data ? today : null;
+    const data = readDb();
+    const plant = data.user_plants.find(p => p.id === Number(id) && p.userId === Number(userId));
+    if (plant) {
+      const today = new Date().toISOString().split('T')[0];
+      plant.lastWatered = today;
+      writeDb(data);
+      return today;
+    }
+    return null;
   },
 
-  // ── Update plant details / watering reminder ───────────────────────────────
+  // Update plant / watering reminder
   async updatePlant(id, userId, { title, text, imgUrl, wateringFrequency, lastWatered }) {
-    const updates = {};
-    if (title            !== undefined) updates.title             = title.trim();
-    if (text             !== undefined) updates.text              = text;
-    if (imgUrl           !== undefined) updates.img_url           = imgUrl;
-    if (wateringFrequency !== undefined) updates.watering_frequency = String(wateringFrequency);
-    if (lastWatered      !== undefined) updates.last_watered      = lastWatered;
-
-    const { data, error } = await supabase
-      .from('user_plants')
-      .update(updates)
-      .eq('id', id)
-      .eq('user_id', userId)
-      .select()
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!data) return null;
-    return {
-      id:               data.id,
-      userId:           data.user_id,
-      title:            data.title,
-      text:             data.text,
-      imgUrl:           data.img_url,
-      wateringFrequency: data.watering_frequency,
-      lastWatered:      data.last_watered,
-      createdAt:        data.created_at
-    };
+    const data = readDb();
+    const plant = data.user_plants.find(p => p.id === Number(id) && p.userId === Number(userId));
+    if (plant) {
+      if (title !== undefined) plant.title = title.trim();
+      if (text !== undefined) plant.text = text;
+      if (imgUrl !== undefined) plant.imgUrl = imgUrl;
+      if (wateringFrequency !== undefined) plant.wateringFrequency = String(wateringFrequency);
+      if (lastWatered !== undefined) plant.lastWatered = lastWatered;
+      writeDb(data);
+      return plant;
+    }
+    return null;
   }
 };
