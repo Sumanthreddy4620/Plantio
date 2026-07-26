@@ -1,86 +1,77 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { MongoClient, ObjectId } from 'mongodb';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const dbPath = path.resolve(__dirname, 'plantio_db.json');
+// MongoDB connection URI from environment variable
+const MONGODB_URI = process.env.MONGODB_URI;
 
-// Initialize DB file if it doesn't exist
-function initDb() {
-  if (!fs.existsSync(dbPath)) {
-    const initialData = {
-      users: [],
-      user_plants: [],
-      nextUserId: 1,
-      nextPlantId: 1
-    };
-    fs.writeFileSync(dbPath, JSON.stringify(initialData, null, 2), 'utf-8');
-    console.log('✅ Created database file at:', dbPath);
+let client = null;
+let database = null;
+
+async function connectDb() {
+  if (database) return database;
+
+  if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI environment variable is not set. Please add it to your Render environment variables.');
   }
-}
 
-initDb();
+  client = new MongoClient(MONGODB_URI, {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 10000,
+  });
 
-function readDb() {
-  try {
-    const raw = fs.readFileSync(dbPath, 'utf-8');
-    return JSON.parse(raw);
-  } catch (err) {
-    console.error('Error reading db:', err);
-    return { users: [], user_plants: [], nextUserId: 1, nextPlantId: 1 };
-  }
-}
+  await client.connect();
+  database = client.db('plantio');
+  console.log('✅ Connected to MongoDB Atlas');
 
-function writeDb(data) {
-  try {
-    fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('Error writing db:', err);
-  }
+  // Create indexes for faster lookups
+  await database.collection('users').createIndex({ email: 1 }, { unique: true });
+  await database.collection('user_plants').createIndex({ userId: 1 });
+
+  return database;
 }
 
 export const db = {
   // Find user by email
-  findUserByEmail(email) {
-    const data = readDb();
-    return data.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  async findUserByEmail(email) {
+    const d = await connectDb();
+    return d.collection('users').findOne({ email: email.toLowerCase() });
   },
 
   // Find user by id
-  findUserById(id) {
-    const data = readDb();
-    return data.users.find(u => u.id === Number(id));
+  async findUserById(id) {
+    const d = await connectDb();
+    try {
+      return d.collection('users').findOne({ _id: new ObjectId(String(id)) });
+    } catch {
+      return d.collection('users').findOne({ legacyId: Number(id) });
+    }
   },
 
   // Create new user
-  createUser({ firstName, lastName, email, password }) {
-    const data = readDb();
+  async createUser({ firstName, lastName, email, password }) {
+    const d = await connectDb();
     const newUser = {
-      id: data.nextUserId++,
       firstName,
       lastName,
       email: email.toLowerCase(),
       password,
       createdAt: new Date().toISOString()
     };
-    data.users.push(newUser);
-    writeDb(data);
-    return newUser;
+    const result = await d.collection('users').insertOne(newUser);
+    return { ...newUser, id: result.insertedId.toString() };
   },
 
   // Get user plants
-  getUserPlants(userId) {
-    const data = readDb();
-    return data.user_plants.filter(p => p.userId === userId);
+  async getUserPlants(userId) {
+    const d = await connectDb();
+    const plants = await d.collection('user_plants').find({ userId: String(userId) }).toArray();
+    return plants.map(p => ({ ...p, id: p._id.toString() }));
   },
 
   // Create plant
-  createPlant({ userId, title, text, imgUrl, wateringFrequency, lastWatered }) {
-    const data = readDb();
+  async createPlant({ userId, title, text, imgUrl, wateringFrequency, lastWatered }) {
+    const d = await connectDb();
     const newPlant = {
-      id: data.nextPlantId++,
-      userId,
+      userId: String(userId),
       title,
       text: text || '',
       imgUrl: imgUrl || '',
@@ -88,49 +79,59 @@ export const db = {
       lastWatered: lastWatered || new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString()
     };
-    data.user_plants.push(newPlant);
-    writeDb(data);
-    return newPlant;
+    const result = await d.collection('user_plants').insertOne(newPlant);
+    return { ...newPlant, id: result.insertedId.toString() };
   },
 
   // Delete plant
-  deletePlant(id, userId) {
-    const data = readDb();
-    const index = data.user_plants.findIndex(p => p.id === Number(id) && p.userId === userId);
-    if (index !== -1) {
-      data.user_plants.splice(index, 1);
-      writeDb(data);
-      return true;
+  async deletePlant(id, userId) {
+    const d = await connectDb();
+    try {
+      const result = await d.collection('user_plants').deleteOne({
+        _id: new ObjectId(String(id)),
+        userId: String(userId)
+      });
+      return result.deletedCount > 0;
+    } catch {
+      return false;
     }
-    return false;
   },
 
   // Water plant
-  waterPlant(id, userId) {
-    const data = readDb();
-    const plant = data.user_plants.find(p => p.id === Number(id) && p.userId === userId);
-    if (plant) {
-      const today = new Date().toISOString().split('T')[0];
-      plant.lastWatered = today;
-      writeDb(data);
-      return today;
+  async waterPlant(id, userId) {
+    const d = await connectDb();
+    const today = new Date().toISOString().split('T')[0];
+    try {
+      const result = await d.collection('user_plants').updateOne(
+        { _id: new ObjectId(String(id)), userId: String(userId) },
+        { $set: { lastWatered: today } }
+      );
+      return result.matchedCount > 0 ? today : null;
+    } catch {
+      return null;
     }
-    return null;
   },
 
   // Update plant / watering reminder
-  updatePlant(id, userId, { title, text, imgUrl, wateringFrequency, lastWatered }) {
-    const data = readDb();
-    const plant = data.user_plants.find(p => p.id === Number(id) && p.userId === userId);
-    if (plant) {
-      if (title !== undefined) plant.title = title.trim();
-      if (text !== undefined) plant.text = text;
-      if (imgUrl !== undefined) plant.imgUrl = imgUrl;
-      if (wateringFrequency !== undefined) plant.wateringFrequency = String(wateringFrequency);
-      if (lastWatered !== undefined) plant.lastWatered = lastWatered;
-      writeDb(data);
-      return plant;
+  async updatePlant(id, userId, { title, text, imgUrl, wateringFrequency, lastWatered }) {
+    const d = await connectDb();
+    const updates = {};
+    if (title !== undefined) updates.title = title.trim();
+    if (text !== undefined) updates.text = text;
+    if (imgUrl !== undefined) updates.imgUrl = imgUrl;
+    if (wateringFrequency !== undefined) updates.wateringFrequency = String(wateringFrequency);
+    if (lastWatered !== undefined) updates.lastWatered = lastWatered;
+
+    try {
+      const result = await d.collection('user_plants').findOneAndUpdate(
+        { _id: new ObjectId(String(id)), userId: String(userId) },
+        { $set: updates },
+        { returnDocument: 'after' }
+      );
+      if (!result) return null;
+      return { ...result, id: result._id.toString() };
+    } catch {
+      return null;
     }
-    return null;
   }
 };
