@@ -186,10 +186,10 @@ export default function Comp({ searchText }) {
         </article>
 
         {/* Load More Button */}
-        {!loading && hasMore && (
+        {!loading && !usingFallback && hasMore && (
           <div style={{ textAlign: "center", margin: "24px 0 12px" }}>
             <button
-              onClick={() => setPage((p) => p + 1)}
+              onClick={handleLoadMore}
               disabled={loadingMore}
               className="load-more-btn"
             >
