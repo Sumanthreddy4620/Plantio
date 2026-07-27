@@ -10,14 +10,12 @@ export default function PlantDetail() {
   const navigate = useNavigate();
   const isLiveId = id && (id.startsWith("inat_") || id.startsWith("perenual_") || isNaN(Number(id)));
 
-  // For local plants (numeric IDs), find immediately
   const localPlant = !isLiveId ? dataPlant.find((p) => p.id === Number(id)) : null;
 
   const [plant, setPlant] = useState(localPlant || null);
   const [loading, setLoading] = useState(isLiveId);
   const [error, setError] = useState(null);
   const [addStatus, setAddStatus] = useState(null); // null | "adding" | "added" | "error" | "login"
-
 
   useEffect(() => {
     if (!isLiveId) return;
@@ -104,7 +102,7 @@ export default function PlantDetail() {
 
   return (
     <div className="plant-detail">
-      {/* Hero */}
+      
       <div className="detail-hero">
         <img
           src={plant.img?.src || PLACEHOLDER}
@@ -117,7 +115,6 @@ export default function PlantDetail() {
         </div>
       </div>
 
-      {/* Body */}
       <div className="detail-body">
         <div className="detail-breadcrumb">
           <Link to="/">Home</Link> →{" "}
@@ -125,7 +122,6 @@ export default function PlantDetail() {
           {plant.title}
         </div>
 
-        {/* Badges */}
         <span className={`difficulty-badge ${plant.difficulty || "Easy"}`}>
           {plant.difficulty === "Hard" ? "🔴" : plant.difficulty === "Moderate" ? "🟡" : "🟢"}{" "}
           {plant.difficulty || "Easy"}
@@ -144,7 +140,6 @@ export default function PlantDetail() {
           📦 {(!plant.category || plant.category === "Plantae") ? "Flowers" : plant.category}
         </span>
 
-        {/* Origin country if available */}
         {plant.originCountry && (
           <span
             style={{
@@ -161,14 +156,12 @@ export default function PlantDetail() {
           </span>
         )}
 
-        {/* Description */}
         <p className="detail-desc">
           {plant.description
             ? plant.description.replace(/<[^>]*>/g, '')
             : `${plant.title} (${plant.text}) is a remarkable plant with unique characteristics. Learn how to care for it and keep it thriving.`}
         </p>
 
-        {/* Care cards */}
         <div className="care-grid">
           <div className="care-card">
             <span className="care-icon">💧</span>
@@ -199,7 +192,6 @@ export default function PlantDetail() {
           )}
         </div>
 
-        {/* Add to Your Plants */}
         <div style={{ marginTop: "32px", padding: "24px", background: "var(--primary-light)", borderRadius: "16px", border: "1.5px solid var(--border)" }}>
           <h3 style={{ fontWeight: 900, marginBottom: "8px" }}>🌱 Own this plant?</h3>
           <p style={{ color: "var(--text-muted)", marginBottom: "16px", fontSize: "0.95rem" }}>

@@ -14,7 +14,6 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Check user login status on mount & storage changes
   useEffect(() => {
     const checkUser = () => {
       try {

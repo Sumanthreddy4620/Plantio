@@ -6,7 +6,6 @@ export function getWateringStatus(lastWatered, frequencyDays) {
     return { label: "💧 Water now!", cls: "due", statusType: "overdue" };
   }
 
-  // Normalize dates to clean YYYY-MM-DD string format
   const lastStr = String(lastWatered).split("T")[0];
   const todayStr = new Date().toISOString().split("T")[0];
 

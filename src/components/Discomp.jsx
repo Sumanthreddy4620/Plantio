@@ -31,7 +31,6 @@ export default function Discomp({ searchText }) {
     setHasMore(true);
     fetchDiseases(1, true);
     return () => { isMounted.current = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, selectedCategory]);
 
   const fetchDiseases = useCallback(async (pageNum, isReset = false) => {
@@ -71,7 +70,6 @@ export default function Discomp({ searchText }) {
     } catch {
       if (!isMounted.current) return;
       if (isReset) {
-        // Fallback to static dataDis
         const catFilter = selectedCategory === "All"
           ? dataDis
           : dataDis.filter((item) => item.category === selectedCategory);
@@ -89,7 +87,6 @@ export default function Discomp({ searchText }) {
         setLoadingMore(false);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, selectedCategory]);
 
   const handleLoadMore = () => {
@@ -125,7 +122,7 @@ export default function Discomp({ searchText }) {
       </div>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}>
-        {/* Status indicator */}
+        
         {!loading && (
           <div>
             <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
@@ -151,7 +148,6 @@ export default function Discomp({ searchText }) {
           }
         </article>
 
-        {/* Load More Button */}
         {!loading && !usingFallback && hasMore && diseases.length > 0 && (
           <div style={{ textAlign: "center", margin: "24px 0 12px" }}>
             <button

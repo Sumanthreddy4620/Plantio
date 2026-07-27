@@ -9,7 +9,7 @@ export default function Diseases() {
     <>
       <main>
         <div className="FirstComp">
-          {/* Left: text */}
+          
           <div className="FirstComp-text">
             <h4>
               <Link to="/">Plantio → </Link>
@@ -24,7 +24,6 @@ export default function Diseases() {
             </p>
           </div>
 
-          {/* Right: search */}
           <div className="FirstComp-search">
             <form onSubmit={(e) => e.preventDefault()}>
               <input

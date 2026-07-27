@@ -3,7 +3,6 @@ import Grid from "./Grid";
 import dataPlant from "./data-plant";
 import API_BASE_URL from "../config";
 
-// Debounce hook
 function useDebounce(value, delay) {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
@@ -19,7 +18,6 @@ const categories = [
   "Herbs", "Aquatics", "Mushrooms", "Weeds",
 ];
 
-// Map our UI categories → Perenual search terms
 const CATEGORY_SEARCH_MAP = {
   "Cactuses": "cactus",
   "Succulents": "succulent",
@@ -47,7 +45,6 @@ export default function Comp({ searchText }) {
   const debouncedSearch = useDebounce(searchText, 400);
   const isMounted = useRef(true);
 
-  // Build the combined search query: user text + category keyword
   const buildSearchQuery = useCallback((category, userText) => {
     const categoryTerm = CATEGORY_SEARCH_MAP[category] || "";
     if (userText && categoryTerm) return `${userText} ${categoryTerm}`;
@@ -63,7 +60,6 @@ export default function Comp({ searchText }) {
     setHasMore(true);
     fetchPlants(1, true);
     return () => { isMounted.current = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, selectedCategory]);
 
   const fetchPlants = useCallback(async (pageNum, isReset = false) => {
@@ -76,7 +72,6 @@ export default function Comp({ searchText }) {
       const categoryParam = selectedCategory ? `&category=${encodeURIComponent(selectedCategory)}` : "";
       const res = await fetch(`${API_BASE_URL}/api/external-plants?page=${pageNum}${searchParam}${categoryParam}`);
 
-      // Rate limit hit — fall back to local data gracefully
       if (res.status === 429) {
         const errData = await res.json();
         throw new Error(errData.error || "Rate limit reached");
@@ -95,7 +90,6 @@ export default function Comp({ searchText }) {
     } catch (err) {
       if (!isMounted.current) return;
       if (isReset) {
-        // Fallback: filter local dataset by category + search
         const catFilter = selectedCategory === "All"
           ? dataPlant
           : dataPlant.filter((p) => p.category === selectedCategory);
@@ -114,9 +108,7 @@ export default function Comp({ searchText }) {
         setLoadingMore(false);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, selectedCategory, buildSearchQuery]);
-
 
   const handleLoadMore = () => {
     const nextPage = page + 1;
@@ -137,7 +129,7 @@ export default function Comp({ searchText }) {
 
   return (
     <aside>
-      {/* Left sidebar — category filter */}
+      
       <div className="SlidePanel">
         {categories.map((category) => (
           <button
@@ -150,9 +142,8 @@ export default function Comp({ searchText }) {
         ))}
       </div>
 
-      {/* Right — plant grid container */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}>
-        {/* Status line */}
+        
         {!loading && (
           <div>
             <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
@@ -178,7 +169,6 @@ export default function Comp({ searchText }) {
           }
         </article>
 
-        {/* Load More Button */}
         {!loading && hasMore && (
           <div style={{ textAlign: "center", margin: "24px 0 12px" }}>
             <button

@@ -26,14 +26,12 @@ function extractPlantData(row) {
   let journal = [];
   let cleanText = row.text || '';
 
-  // 1. Try growth_journal column
   if (row.growth_journal) {
     try {
       journal = typeof row.growth_journal === 'string' ? JSON.parse(row.growth_journal) : row.growth_journal;
     } catch (e) {}
   }
 
-  // 2. Try embedded __GJ__: tag in text
   if ((!journal || journal.length === 0) && cleanText.includes('__GJ__:')) {
     try {
       const parts = cleanText.split('__GJ__:');
@@ -69,7 +67,6 @@ function packPlantText(text, growthJournal) {
 
 export const db = {
 
-  // ── Find user by email ────────────────────────────────────────────────────
   async findUserByEmail(email) {
     const { data, error } = await supabase
       .from('users')
@@ -87,7 +84,6 @@ export const db = {
     };
   },
 
-  // ── Find user by id ───────────────────────────────────────────────────────
   async findUserById(id) {
     const { data, error } = await supabase
       .from('users')
@@ -104,7 +100,6 @@ export const db = {
     };
   },
 
-  // ── Create new user ───────────────────────────────────────────────────────
   async createUser({ firstName, lastName, email, password }) {
     const { data, error } = await supabase
       .from('users')
@@ -125,7 +120,6 @@ export const db = {
     };
   },
 
-  // ── Get all plants for user ───────────────────────────────────────────────
   async getUserPlants(userId) {
     const { data, error } = await supabase
       .from('user_plants')
@@ -136,7 +130,6 @@ export const db = {
     return (data || []).map(extractPlantData);
   },
 
-  // ── Create plant ──────────────────────────────────────────────────────────
   async createPlant({ userId, title, text, imgUrl, wateringFrequency, lastWatered, growthJournal }) {
     const packedText = packPlantText(text, growthJournal);
     const journalData = Array.isArray(growthJournal) ? JSON.stringify(growthJournal) : (growthJournal || '[]');
@@ -172,7 +165,6 @@ export const db = {
     return extractPlantData(data);
   },
 
-  // ── Delete plant ──────────────────────────────────────────────────────────
   async deletePlant(id, userId) {
     const { error, count } = await supabase
       .from('user_plants')
@@ -183,7 +175,6 @@ export const db = {
     return count > 0;
   },
 
-  // ── Mark plant as watered today ───────────────────────────────────────────
   async waterPlant(id, userId) {
     const today = new Date().toISOString().split('T')[0];
     const { data, error } = await supabase
@@ -197,7 +188,6 @@ export const db = {
     return data ? today : null;
   },
 
-  // ── Update plant details ──────────────────────────────────────────────────
   async updatePlant(id, userId, { title, text, imgUrl, wateringFrequency, lastWatered, growthJournal }) {
     const updates = {};
     if (title !== undefined) updates.title = title.trim();

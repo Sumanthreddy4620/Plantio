@@ -63,7 +63,6 @@ export default function Login() {
           throw networkErr;
         }
 
-        // Fallback for Vercel live demo mode when API server is separate
         const namePart = form.email.split("@")[0] || "Gardener";
         const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
         userObj = {
@@ -75,16 +74,13 @@ export default function Login() {
         token = "demo_token_" + Date.now();
       }
 
-      // Save token and non-sensitive user profile in localStorage so login persists on page reloads
       localStorage.setItem("plantio_token", token);
       localStorage.setItem("plantio_user", JSON.stringify(userObj));
       sessionStorage.setItem("plantio_token", token);
       sessionStorage.setItem("plantio_user", JSON.stringify(userObj));
 
-      // Dispatch window event so Header updates
       window.dispatchEvent(new Event("storage"));
 
-      // Redirect to Your Plants page
       navigate("/your-plants");
     } catch (err) {
       setApiError(err.message);
@@ -97,7 +93,6 @@ export default function Login() {
     <main className="login">
       <div className="auth-card">
 
-        {/* ── Left green brand panel ── */}
         <div className="auth-brand">
           <div className="auth-brand-logo">
             <img src={plantLogo} alt="Plantio" />
@@ -116,7 +111,6 @@ export default function Login() {
           </div>
         </div>
 
-        {/* ── Right white form panel ── */}
         <div className="auth-form-panel">
           <h2>Log in</h2>
           <p className="auth-subtitle">Good to see you again!</p>

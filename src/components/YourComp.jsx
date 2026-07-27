@@ -26,7 +26,6 @@ export default function YourComp() {
     lastWatered: new Date().toISOString().split("T")[0],
   });
 
-  // Re-check token/user on storage event
   useEffect(() => {
     const syncAuth = () => {
       const t = localStorage.getItem("plantio_token") || sessionStorage.getItem("plantio_token");
@@ -38,7 +37,6 @@ export default function YourComp() {
     return () => window.removeEventListener("storage", syncAuth);
   }, []);
 
-  // Fetch plants from Database API when logged in
   useEffect(() => {
     if (!token) {
       setLoading(false);
@@ -156,7 +154,6 @@ export default function YourComp() {
     }
   }
 
-  // ── EDIT / MODIFY PLANT REMINDER ──
   const [editingPlant, setEditingPlant] = useState(null);
   const [editFormData, setEditFormData] = useState({
     title: "",
@@ -309,7 +306,6 @@ export default function YourComp() {
     }
   }
 
-  // If user is not logged in, prompt to log in / sign up
   if (!token || !user) {
     return (
       <div className="yourcomp-main" style={{ padding: "80px 24px 100px", textAlign: "center", alignItems: "center" }}>
@@ -343,16 +339,15 @@ export default function YourComp() {
 
   return (
     <div className="yourcomp-main">
-      {/* Floating add button */}
+      
       <button className="Add-btn" onClick={() => setShowForm(true)} title="Add a plant to database">
         +
       </button>
 
-      {/* Popup form for Add Plant */}
       {showForm && (
         <div className="popup" onClick={(e) => e.target === e.currentTarget && setShowForm(false)}>
           <form onSubmit={handleSubmit} className="modal-card-form">
-            {/* Modal Header */}
+            
             <div className="modal-header-row">
               <div>
                 <h3 className="modal-title">🌱 Add New Plant</h3>
@@ -368,7 +363,6 @@ export default function YourComp() {
               </button>
             </div>
 
-            {/* Field: Plant Name */}
             <div className="modal-field-group">
               <label className="modal-field-label">Plant Name *</label>
               <input
@@ -381,7 +375,6 @@ export default function YourComp() {
               />
             </div>
 
-            {/* Field: Notes / Scientific Name */}
             <div className="modal-field-group">
               <label className="modal-field-label">Notes or Scientific Name</label>
               <input
@@ -393,7 +386,6 @@ export default function YourComp() {
               />
             </div>
 
-            {/* Photo Selection */}
             <div className="form-photo-picker">
               {formData.imgUrl ? (
                 <div className="photo-preview-box">
@@ -449,7 +441,6 @@ export default function YourComp() {
               )}
             </div>
 
-            {/* 2-Column Schedule Grid */}
             <div className="modal-schedule-grid">
               <div className="modal-field-group">
                 <label className="modal-field-label">Watering Frequency</label>
@@ -480,7 +471,6 @@ export default function YourComp() {
               </div>
             </div>
 
-            {/* Footer Actions */}
             <div className="modal-footer-actions" style={{ borderTop: "none", paddingTop: "4px" }}>
               <button type="submit" className="modal-save-btn">
                 🌱 Add Plant to Garden
@@ -498,11 +488,10 @@ export default function YourComp() {
         </div>
       )}
 
-      {/* Modify / Edit Plant Popup Form */}
       {editingPlant && (
         <div className="popup" onClick={(e) => e.target === e.currentTarget && setEditingPlant(null)}>
           <form onSubmit={handleUpdateSubmit} className="modal-card-form">
-            {/* Modal Header */}
+            
             <div className="modal-header-row">
               <div>
                 <h3 className="modal-title">🌱 Manage Plant Details</h3>
@@ -518,7 +507,6 @@ export default function YourComp() {
               </button>
             </div>
 
-            {/* Field: Plant Name */}
             <div className="modal-field-group">
               <label className="modal-field-label">Plant Name *</label>
               <input
@@ -531,7 +519,6 @@ export default function YourComp() {
               />
             </div>
 
-            {/* Field: Notes / Scientific Name */}
             <div className="modal-field-group">
               <label className="modal-field-label">Scientific Name or Notes</label>
               <input
@@ -543,7 +530,6 @@ export default function YourComp() {
               />
             </div>
 
-            {/* Photo Selection */}
             <div className="form-photo-picker">
               {editFormData.imgUrl ? (
                 <div className="photo-preview-box">
@@ -575,7 +561,6 @@ export default function YourComp() {
               )}
             </div>
 
-            {/* 2-Column Schedule Grid */}
             <div className="modal-schedule-grid">
               <div className="modal-field-group">
                 <label className="modal-field-label">Watering Frequency</label>
@@ -606,7 +591,6 @@ export default function YourComp() {
               </div>
             </div>
 
-            {/* 📸 Growth Journal & Progress Photos Section */}
             <div className="modal-growth-section">
               <div className="growth-section-header">
                 <div>
@@ -622,7 +606,6 @@ export default function YourComp() {
                 </button>
               </div>
 
-              {/* Add Progress Entry Subform */}
               {showJournalAdd && (
                 <div className="journal-add-subform">
                   <h5 className="subform-title">🌱 Add Progress Photo Entry</h5>
@@ -664,7 +647,6 @@ export default function YourComp() {
                     style={{ marginTop: "8px" }}
                   />
 
-                  {/* Photo File Input */}
                   <div className="journal-photo-input" style={{ marginTop: "8px" }}>
                     {newJournalEntry.imgUrl ? (
                       <div className="photo-preview-box">
@@ -707,7 +689,6 @@ export default function YourComp() {
                 </div>
               )}
 
-              {/* Progress Timeline Grid */}
               {(editFormData.growthJournal || []).length === 0 ? (
                 <div className="empty-journal-box">
                   <span style={{ fontSize: "1.3rem" }}>📸</span>
@@ -772,7 +753,6 @@ export default function YourComp() {
               </button>
             </div>
 
-            {/* Primary Submit & Secondary Delete/Cancel */}
             <div className="modal-footer-actions">
               <button type="submit" className="modal-save-btn">
                 💾 Save Changes
@@ -804,7 +784,6 @@ export default function YourComp() {
         </div>
       )}
 
-      {/* Calculate garden health stats */}
       {(() => {
         let healthyCount = 0;
         let dueSoonCount = 0;
@@ -832,7 +811,7 @@ export default function YourComp() {
 
         return (
           <>
-            {/* Header Info & Stats Dashboard */}
+            
             <div className="garden-dashboard-wrapper">
               <div className="garden-dashboard-banner">
                 <div className="garden-stats-group">
@@ -891,7 +870,6 @@ export default function YourComp() {
                   />
                 ))}
 
-                {/* Add card */}
                 <div className="your-add-entry" onClick={() => setShowForm(true)} title="Add a new plant to your garden">
                   <div className="add-card-badge">
                     <span className="add-card-icon">🌱</span>

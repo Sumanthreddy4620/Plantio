@@ -25,4 +25,3 @@ dist-ssr
 
 # Database storage files
 server/plantio_db.json
-

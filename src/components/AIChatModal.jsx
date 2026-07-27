@@ -14,7 +14,6 @@ export default function AIChatModal() {
     });
   };
 
-  // Listen for Ask AI Doctor custom events from plant cards
   useEffect(() => {
     const handleAskEvent = () => {
       setHasOpenedOnce(true);
@@ -24,7 +23,6 @@ export default function AIChatModal() {
     return () => window.removeEventListener("plantio_ai_doctor_ask", handleAskEvent);
   }, []);
 
-  // Close the widget whenever the user clicks/taps anywhere outside of it
   useEffect(() => {
     if (!isOpen) return;
 
@@ -44,8 +42,7 @@ export default function AIChatModal() {
 
   return (
     <div className="ai-float-widget-container" ref={containerRef}>
-      {/* Floating Drawer Chat Window — stays mounted once opened so the conversation
-          isn't lost when the user closes and reopens it; visibility is toggled via CSS. */}
+      
       {hasOpenedOnce && (
         <div className={`ai-float-window ${isOpen ? "" : "ai-float-window-closed"}`}>
           <div className="ai-float-header">
@@ -66,7 +63,6 @@ export default function AIChatModal() {
         </div>
       )}
 
-      {/* Floating Action Button (FAB) */}
       <button
         onClick={toggleOpen}
         className={`ai-fab-button ${isOpen ? "open" : ""}`}

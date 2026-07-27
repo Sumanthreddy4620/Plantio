@@ -8,7 +8,7 @@ export default function Plants() {
   return (
     <main>
       <div className="FirstComp">
-        {/* Left: text */}
+        
         <div className="FirstComp-text">
           <h4>
             <Link to="/">Plantio → </Link>
@@ -21,7 +21,6 @@ export default function Plants() {
           </p>
         </div>
 
-        {/* Right: search */}
         <div className="FirstComp-search">
           <form onSubmit={(e) => e.preventDefault()}>
             <input

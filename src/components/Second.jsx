@@ -13,8 +13,7 @@ const QUICK_CATEGORIES = [
 export default function Second() {
   return (
     <main className="home-second">
-      
-      {/* Quick Category Bar */}
+
       <div className="home-quick-categories">
         {QUICK_CATEGORIES.map((cat, i) => (
           <Link key={i} to={cat.path} className="quick-cat-item">
@@ -30,10 +29,8 @@ export default function Second() {
         <p>Everything you need to nurture, diagnose, and grow your plants with confidence.</p>
       </div>
 
-      {/* Featured Plant of the Day */}
       <PlantOfDay />
 
-      {/* Feature Cards Grid */}
       <Homegrid />
     </main>
   );

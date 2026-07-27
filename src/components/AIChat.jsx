@@ -39,7 +39,6 @@ export default function AIChat({ isEmbedded = false }) {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // Listen for plant card Ask AI Doctor shortcuts
   useEffect(() => {
     const handleAskEvent = (e) => {
       if (e.detail) {
@@ -56,7 +55,6 @@ export default function AIChat({ isEmbedded = false }) {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Handle Photo File Selection
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -91,12 +89,9 @@ export default function AIChat({ isEmbedded = false }) {
     setShowUrlInput(false);
   };
 
-  // Submit AI Request
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // If the user typed/pasted a URL straight into the message box (instead of using
-    // the 🔗 link button), treat it exactly the same as an attached image link.
     let effectivePrompt = inputPrompt;
     let effectiveImageUrl = imageUrl;
     if (!imageUrl.trim() && !photoBase64) {
@@ -126,7 +121,6 @@ export default function AIChat({ isEmbedded = false }) {
     const currentUrl = effectiveImageUrl;
     const currentBase64 = photoBase64;
 
-    // Reset inputs
     setInputPrompt("");
     setImageUrl("");
     setShowUrlInput(false);
@@ -178,7 +172,6 @@ export default function AIChat({ isEmbedded = false }) {
     }
   };
 
-  // Add identified plant to User's saved plants
   const handleAddToMyPlants = async (diagnosis) => {
     const token = localStorage.getItem("plantio_token");
     const userStr = localStorage.getItem("plantio_user") || sessionStorage.getItem("plantio_user");
@@ -218,7 +211,7 @@ export default function AIChat({ isEmbedded = false }) {
 
   return (
     <div className={`ai-chat-container ${isEmbedded ? "embedded" : "standalone"}`}>
-      {/* Header Banner if standalone view */}
+      
       {!isEmbedded && (
         <div className="ai-chat-header-banner">
           <div className="ai-header-content">
@@ -232,14 +225,12 @@ export default function AIChat({ isEmbedded = false }) {
         </div>
       )}
 
-      {/* Toast Notification */}
       {toastMessage && (
         <div className="ai-toast-notification">
           {toastMessage}
         </div>
       )}
 
-      {/* Chat Messages Body */}
       <div className="ai-chat-body">
         {messages.map((msg) => (
           <div key={msg.id} className={`ai-chat-bubble-wrapper ${msg.sender}`}>
@@ -253,7 +244,6 @@ export default function AIChat({ isEmbedded = false }) {
                 <span className="bubble-time">{msg.timestamp}</span>
               </div>
 
-              {/* User attached photo preview */}
               {msg.imageBase64 && (
                 <div className="chat-attached-image-wrapper">
                   <img src={msg.imageBase64} alt="Attached plant photo" className="chat-attached-img" />
@@ -261,7 +251,6 @@ export default function AIChat({ isEmbedded = false }) {
                 </div>
               )}
 
-              {/* User attached URL preview */}
               {msg.imageUrl && (
                 <div className="chat-attached-image-wrapper">
                   <img src={msg.imageUrl} alt="Attached plant URL" className="chat-attached-img" onError={(e) => { e.target.style.display = 'none'; }} />
@@ -269,7 +258,6 @@ export default function AIChat({ isEmbedded = false }) {
                 </div>
               )}
 
-              {/* Text Message */}
               <div className="bubble-text">
                 {msg.text.split("\n\n").map((paragraph, pIdx) => (
                   <p key={pIdx}>
@@ -287,7 +275,6 @@ export default function AIChat({ isEmbedded = false }) {
                 ))}
               </div>
 
-              {/* Diagnostic AI Result Card */}
               {msg.diagnosis && (() => {
                 const d = msg.diagnosis;
                 const isPestOrDisease = d.category === "Pest" || d.category === "Disease";
@@ -319,7 +306,6 @@ export default function AIChat({ isEmbedded = false }) {
                       </div>
                     </div>
 
-                    {/* Plant Care Specs — shown only for actual plant identifications, never for pests/diseases */}
                     {!isPestOrDisease && d.care && (
                       <div className="diagnosis-care-grid">
                         <div><span>💧 Water</span><strong>{d.care.watering}</strong></div>
@@ -330,7 +316,6 @@ export default function AIChat({ isEmbedded = false }) {
                       </div>
                     )}
 
-                    {/* Symptoms / Treatment / Prevention — for pests, diseases, or a plant showing signs of trouble */}
                     {showAlertDetails && (d.symptoms || d.treatment || d.prevention) && (
                       <div className="diagnosis-alert-grid">
                         {d.symptoms && (
@@ -354,7 +339,6 @@ export default function AIChat({ isEmbedded = false }) {
                       </div>
                     )}
 
-                    {/* Card Actions */}
                     <div className="diagnosis-card-actions">
                       {!isPestOrDisease && (
                         <button
@@ -382,7 +366,6 @@ export default function AIChat({ isEmbedded = false }) {
           </div>
         ))}
 
-        {/* Loading Spinner Indicator */}
         {isLoading && (
           <div className="ai-chat-bubble-wrapper ai loading">
             <div className="ai-avatar">🌿</div>
@@ -398,7 +381,6 @@ export default function AIChat({ isEmbedded = false }) {
         <div ref={chatBottomRef} />
       </div>
 
-      {/* Attached Media Chips */}
       {(photoBase64 || imageUrl) && (
         <div className="ai-attachment-preview-bar">
           {photoBase64 && (
@@ -418,7 +400,6 @@ export default function AIChat({ isEmbedded = false }) {
         </div>
       )}
 
-      {/* Image URL Modal Input Row */}
       {showUrlInput && (
         <div className="ai-url-input-row">
           <input
@@ -431,9 +412,8 @@ export default function AIChat({ isEmbedded = false }) {
         </div>
       )}
 
-      {/* Input Form Bar */}
       <form onSubmit={handleSubmit} className="ai-chat-form">
-        {/* Hidden File Input */}
+        
         <input
           type="file"
           accept="image/*"
@@ -443,7 +423,7 @@ export default function AIChat({ isEmbedded = false }) {
         />
 
         <div className="ai-input-pill">
-          {/* Photo Upload Icon Button */}
+          
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -457,7 +437,6 @@ export default function AIChat({ isEmbedded = false }) {
             </svg>
           </button>
 
-          {/* Image URL Icon Button */}
           <button
             type="button"
             onClick={() => setShowUrlInput(!showUrlInput)}
@@ -474,7 +453,6 @@ export default function AIChat({ isEmbedded = false }) {
 
           <span className="ai-input-divider" />
 
-          {/* Text Prompt Input */}
           <input
             type="text"
             placeholder="Ask AI Doctor anything..."
@@ -484,7 +462,6 @@ export default function AIChat({ isEmbedded = false }) {
             className="ai-chat-input"
           />
 
-          {/* Send Submit Button */}
           <button
             type="submit"
             disabled={isLoading || (!inputPrompt.trim() && !imageUrl.trim() && !photoBase64)}

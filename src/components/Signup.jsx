@@ -71,12 +71,10 @@ export default function Signup() {
         userObj = data.user;
         token = data.token;
       } catch (networkErr) {
-        // If server explicitly returned an error (e.g., email already registered), rethrow
         if (networkErr.message && networkErr.message.toLowerCase().includes("already registered")) {
           throw networkErr;
         }
 
-        // Fallback for Vercel live demo mode when API server is separate
         userObj = {
           id: Date.now(),
           firstName: form.firstName,
@@ -86,16 +84,13 @@ export default function Signup() {
         token = "demo_token_" + Date.now();
       }
 
-      // Save token and non-sensitive user profile in localStorage so signup persists on page reloads
       localStorage.setItem("plantio_token", token);
       localStorage.setItem("plantio_user", JSON.stringify(userObj));
       sessionStorage.setItem("plantio_token", token);
       sessionStorage.setItem("plantio_user", JSON.stringify(userObj));
 
-      // Dispatch window event so Header updates
       window.dispatchEvent(new Event("storage"));
 
-      // Redirect to Your Plants page
       navigate("/your-plants");
     } catch (err) {
       setApiError(err.message);
@@ -108,7 +103,6 @@ export default function Signup() {
     <main className="signup">
       <div className="auth-card">
 
-        {/* ── Left green brand panel ── */}
         <div className="auth-brand">
           <div className="auth-brand-logo">
             <img src={plantLogo} alt="Plantio" />
@@ -129,7 +123,6 @@ export default function Signup() {
           </div>
         </div>
 
-        {/* ── Right white form panel ── */}
         <div className="auth-form-panel">
           <h2>Create account</h2>
           <p className="auth-subtitle">Sign up free — saved directly to database.</p>
@@ -137,7 +130,7 @@ export default function Signup() {
           {apiError && <p className="form-error" style={{ marginBottom: "12px" }}>⚠ {apiError}</p>}
 
           <form onSubmit={handleSubmit} noValidate>
-            {/* First + Last name row */}
+            
             <div className="auth-input-row">
               <div style={{ flex: 1 }}>
                 <input

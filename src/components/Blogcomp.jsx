@@ -35,7 +35,6 @@ export default function Blogcomp({ searchText }) {
     setHasMore(true);
     fetchBlogs(1, true);
     return () => { isMounted.current = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, selectedCategory]);
 
   const fetchBlogs = useCallback(async (pageNum, isReset = false) => {
@@ -57,7 +56,6 @@ export default function Blogcomp({ searchText }) {
       const newBlogs = (data.blogs && data.blogs.length > 0) ? data.blogs : [];
       
       if (newBlogs.length === 0 && isReset) {
-        // Fallback to static dataBlog seamlessly
         const catFilter = selectedCategory === "All"
           ? dataBlog
           : dataBlog.filter((post) => post.category === selectedCategory);
@@ -77,7 +75,6 @@ export default function Blogcomp({ searchText }) {
     } catch {
       if (!isMounted.current) return;
       if (isReset) {
-        // Fallback to static dataBlog seamlessly
         const catFilter = selectedCategory === "All"
           ? dataBlog
           : dataBlog.filter((post) => post.category === selectedCategory);
@@ -95,7 +92,6 @@ export default function Blogcomp({ searchText }) {
         setLoadingMore(false);
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, selectedCategory]);
 
   const handleLoadMore = () => {
@@ -129,7 +125,7 @@ export default function Blogcomp({ searchText }) {
       </div>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}>
-        {/* Status bar */}
+        
         {!loading && (
           <div>
             <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
@@ -155,7 +151,6 @@ export default function Blogcomp({ searchText }) {
           }
         </article>
 
-        {/* Load More Articles Button */}
         {!loading && !usingFallback && hasMore && blogs.length > 0 && (
           <div style={{ textAlign: "center", margin: "24px 0 12px" }}>
             <button

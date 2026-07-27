@@ -69,7 +69,7 @@ export default function DiseaseDetail() {
 
   return (
     <div className="disease-detail">
-      {/* Hero */}
+      
       <div className="detail-hero">
         <img
           src={disease.img?.src || PLACEHOLDER}
@@ -82,7 +82,6 @@ export default function DiseaseDetail() {
         </div>
       </div>
 
-      {/* Body */}
       <div className="detail-body">
         <div className="detail-breadcrumb">
           <Link to="/">Home</Link> →{" "}
@@ -90,7 +89,6 @@ export default function DiseaseDetail() {
           {disease.title}
         </div>
 
-        {/* Badges */}
         <span className={`severity-badge ${disease.severity || "Medium"}`}>
           {disease.severity === "High" ? "🔴" : disease.severity === "Low" ? "🟢" : "🟡"}{" "}
           {disease.severity || "Medium"} Severity
@@ -109,22 +107,18 @@ export default function DiseaseDetail() {
           {disease.category === "Pest" ? "🐛" : "🦠"} {disease.category || "Disease"}
         </span>
 
-        {/* Description */}
         <p className="detail-desc">{disease.text ? String(disease.text).replace(/<[^>]*>/g, '') : ""}</p>
 
-        {/* Symptoms */}
         <div className="detail-section">
           <h3>🔍 Symptoms</h3>
           <p>{disease.symptoms ? String(disease.symptoms).replace(/<[^>]*>/g, '') : "Look for unusual discoloration, spots, or deformation on leaves and stems. Monitor the plant closely for progressive changes."}</p>
         </div>
 
-        {/* Treatment */}
         <div className="detail-section">
           <h3>💊 Treatment</h3>
           <p>{disease.treatment ? String(disease.treatment).replace(/<[^>]*>/g, '') : "Isolate the affected plant immediately. Remove visibly infected parts. Apply appropriate organic or chemical treatment as needed."}</p>
         </div>
 
-        {/* Prevention */}
         <div className="detail-section">
           <h3>🛡 Prevention</h3>
           <p>{disease.prevention ? String(disease.prevention).replace(/<[^>]*>/g, '') : "Maintain good plant hygiene, ensure proper spacing for air circulation, and inspect plants regularly to catch problems early."}</p>

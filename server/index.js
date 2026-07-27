@@ -4,30 +4,25 @@ import { db } from './db.js';
 
 const PORT = process.env.PORT || 5000;
 
-// Active session token store: token -> userObj
 const activeTokens = new Map();
 
-// Helper to set CORS headers
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
-// Hash password with pbkdf2
 function hashPassword(password) {
   const salt = 'plantio_salt_2025';
   return crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
 }
 
-// Generate Auth Token (stateless HMAC token)
 function generateToken(userObj) {
   const payload = Buffer.from(JSON.stringify({ id: userObj.id, email: userObj.email })).toString('base64');
   const signature = crypto.createHmac('sha256', 'plantio_secret_key_2025').update(payload).digest('hex');
   return `${payload}.${signature}`;
 }
 
-// Parse request JSON body
 function getJsonBody(req) {
   return new Promise((resolve) => {
     let body = '';
@@ -42,7 +37,6 @@ function getJsonBody(req) {
   });
 }
 
-// Helper to authenticate request (async for Supabase)
 async function authenticate(req) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -70,7 +64,6 @@ async function authenticate(req) {
   }
 }
 
-// Helper to derive human-friendly plant category from search, category param, and item names
 function getPlantCategory(item, searchParam = '', categoryParam = '') {
   if (categoryParam && categoryParam !== 'All') return categoryParam;
 
@@ -102,14 +95,12 @@ function getPlantCategory(item, searchParam = '', categoryParam = '') {
   return 'Flowers';
 }
 
-// Helper to infer realistic botanical care details (watering, light, soil, toxicity, difficulty)
 function getPlantCareDetails(item) {
   const common = (item.preferred_common_name || item.common_name || '').toLowerCase();
   const sci = (item.name || '').toLowerCase();
   const summary = (item.wikipedia_summary || '').toLowerCase();
   const combined = `${common} ${sci} ${summary}`;
 
-  // 1. WATERING
   let watering = "Weekly — Water when top 1 inch dry";
   if (combined.includes('cactus') || combined.includes('succulent') || combined.includes('desert') || combined.includes('xerophyte') || sci.includes('cactaceae') || sci.includes('agavaceae')) {
     watering = "Low — Water every 2-3 weeks when soil is dry";
@@ -121,7 +112,6 @@ function getPlantCareDetails(item) {
     watering = "Special — Soak roots & drain every 7-10 days";
   }
 
-  // 2. LIGHT
   let light = "Bright indirect light";
   if (combined.includes('cactus') || combined.includes('succulent') || combined.includes('sunflower') || combined.includes('full sun') || combined.includes('meadow') || combined.includes('prairie')) {
     light = "Full direct sun (6+ hrs/day)";
@@ -131,7 +121,6 @@ function getPlantCareDetails(item) {
     light = "Full sun to partial shade";
   }
 
-  // 3. SOIL
   let soil = "Well-draining potting mix";
   if (combined.includes('cactus') || combined.includes('succulent') || sci.includes('cactaceae')) {
     soil = "Fast-draining gritty cactus mix";
@@ -143,7 +132,6 @@ function getPlantCareDetails(item) {
     soil = "Organic-rich wet aquatic soil";
   }
 
-  // 4. TOXICITY
   let toxicity = "Non-toxic & Pet Safe";
   if (combined.includes('toxic') || combined.includes('poison') || combined.includes('milkweed') || combined.includes('oleander') || combined.includes('nightshade') || combined.includes('dieffenbachia') || combined.includes('euphorbia') || combined.includes('pokeweed')) {
     toxicity = "Toxic to pets & humans";
@@ -153,7 +141,6 @@ function getPlantCareDetails(item) {
     toxicity = "Slightly toxic if ingested";
   }
 
-  // 5. DIFFICULTY
   let difficulty = "Moderate";
   if (combined.includes('cactus') || combined.includes('succulent') || combined.includes('easy') || combined.includes('hardy')) {
     difficulty = "Easy";
@@ -164,8 +151,6 @@ function getPlantCareDetails(item) {
   return { watering, light, soil, toxicity, difficulty };
 }
 
-// Fetch a remote image and convert it to a base64 data payload for vision analysis.
-// Guards against oversized downloads and non-image responses.
 async function fetchImageAsBase64(imageUrl) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10000);
@@ -199,7 +184,6 @@ async function fetchImageAsBase64(imageUrl) {
   }
 }
 
-// Extract clean JSON from a Gemini text response, tolerating markdown code fences.
 function parseGeminiJson(rawText) {
   if (!rawText) return null;
   let cleaned = rawText.trim();
@@ -207,7 +191,6 @@ function parseGeminiJson(rawText) {
   try {
     return JSON.parse(cleaned);
   } catch {
-    // Try to salvage the first {...} block if the model added stray text around it
     const match = cleaned.match(/\{[\s\S]*\}/);
     if (match) {
       try { return JSON.parse(match[0]); } catch { return null; }
@@ -216,7 +199,6 @@ function parseGeminiJson(rawText) {
   }
 }
 
-// Call Gemini's vision model with strict structured JSON output for plant/disease identification.
 async function identifyWithGemini({ apiKey, prompt, base64Data, mimeType, geminiModel }) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`;
 
@@ -274,7 +256,6 @@ Be honest about uncertainty: if the image is blurry, ambiguous, not a plant, or 
 const server = http.createServer(async (req, res) => {
   setCorsHeaders(res);
 
-  // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
     res.end();
@@ -284,16 +265,12 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const pathname = url.pathname;
 
-  // JSON helper
   const sendJson = (status, payload) => {
     res.writeHead(status, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(payload));
   };
 
   try {
-    // ── 0a. iNaturalist PLANT CATALOG PROXY (list + search) ──
-    // ── 0a. iNaturalist PLANT CATALOG PROXY (list + search) ──
-    // No API key required. Rate limit: 100 req/min (not per day).
     if (pathname === '/api/external-plants' && req.method === 'GET') {
       const page = Number(url.searchParams.get('page') || '1');
       const search = url.searchParams.get('search') || '';
@@ -320,7 +297,6 @@ const server = http.createServer(async (req, res) => {
       }
       if (!queryTerm) queryTerm = 'plant';
 
-      // iNaturalist taxa endpoint — filter strictly to Plantae kingdom (or Fungi for mushrooms)
       const inatParams = {
         q: queryTerm,
         rank: 'species',
@@ -390,7 +366,6 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // ── 0b. iNaturalist SINGLE PLANT DETAIL ──
     if (pathname.startsWith('/api/external-plants/') && req.method === 'GET') {
       const rawId = pathname.split('/')[3]; // e.g. "inat_12345"
       const numericId = rawId.startsWith('inat_') ? rawId.replace('inat_', '') : rawId;
@@ -436,14 +411,12 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // ── 0c. iNaturalist PLANT DISEASES & PESTS PROXY ──
     if (pathname === '/api/external-diseases' && req.method === 'GET') {
       const page = Number(url.searchParams.get('page') || '1');
       const search = url.searchParams.get('search') || '';
       const category = url.searchParams.get('category') || 'All';
       const perPage = 30;
 
-      // Determine query search term
       let queryTerm = search.trim();
       if (!queryTerm) {
         if (category === 'Pest') queryTerm = 'aphid';
@@ -530,7 +503,6 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // ── 0d. SINGLE PLANT DISEASE/PEST DETAIL PROXY ──
     if (pathname.startsWith('/api/external-diseases/') && req.method === 'GET') {
       const rawId = pathname.split('/')[3];
       const numericId = rawId.startsWith('dis_inat_') ? rawId.replace('dis_inat_', '') : rawId;
@@ -576,7 +548,6 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // ── 0e. BOTANICAL BLOG & GARDENING ARTICLES PROXY ──
     if (pathname === '/api/external-blogs' && req.method === 'GET') {
       const page = Number(url.searchParams.get('page') || '1');
       const search = url.searchParams.get('search') || '';
@@ -651,7 +622,6 @@ const server = http.createServer(async (req, res) => {
         });
       } catch (err) {
         console.error('Blog API Wikipedia fetch error:', err.message);
-        // Fallback gracefully with 200 OK so frontend receives articles seamlessly
         return sendJson(200, {
           total: 30,
           lastPage: 1,
@@ -661,7 +631,6 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // ── 0f. SINGLE BLOG ARTICLE DETAIL PROXY ──
     if (pathname.startsWith('/api/external-blogs/') && req.method === 'GET') {
       const rawId = pathname.split('/')[3];
       const pageId = rawId.startsWith('blog_live_') ? rawId.replace('blog_live_', '') : rawId;
@@ -690,7 +659,6 @@ const server = http.createServer(async (req, res) => {
         const text = pageObj.extract || '';
         const imgUrl = pageObj.thumbnail?.source || `https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=900&q=80`;
 
-        // Split long Wikipedia extract into structured section blocks
         const paragraphs = text.split('\n').filter(p => p.trim().length > 0);
         const blocks = [];
 
@@ -723,7 +691,6 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // ── 0g. AI PLANT & DISEASE DOCTOR CHAT API ──
     if (pathname === '/api/ai-chat' && req.method === 'POST') {
       const body = await getJsonBody(req);
       const { prompt = '', imageUrl = '', imageBase64 = '', conversationHistory = [] } = body;
@@ -739,7 +706,6 @@ const server = http.createServer(async (req, res) => {
 
         const cleanPrompt = prompt.toLowerCase().trim();
 
-        // 1. Detect simple conversational greetings
         const conversationalWords = ['hello', 'hi', 'hey', 'greetings', 'good morning', 'good evening', 'good afternoon', 'who are you', 'what can you do', 'help', 'thanks', 'thank you', 'bye', 'goodbye', 'cool', 'ok', 'okay', 'nice', 'awesome'];
         const isGreeting = !imageUrl && !imageBase64 && (
           conversationalWords.includes(cleanPrompt) ||
@@ -762,7 +728,6 @@ const server = http.createServer(async (req, res) => {
         const GEMINI_MODEL = 'gemini-3.6-flash';
         const hasImage = Boolean(imageBase64 || imageUrl);
 
-        // ═══ PATH A: An image was provided — run real multimodal identification ═══
         if (hasImage) {
           let base64Data = null;
           let mimeType = 'image/jpeg';
@@ -817,8 +782,6 @@ const server = http.createServer(async (req, res) => {
             });
           }
 
-          // Cross-reference Gemini's identification with the live iNaturalist database
-          // for an authoritative photo, taxonomy, and Wikipedia link.
           let inatTaxon = null;
           const lookupName = geminiResult.scientificName || geminiResult.commonName;
           try {
@@ -877,9 +840,6 @@ const server = http.createServer(async (req, res) => {
           });
         }
 
-        // ═══ PATH B: Text-only query — search the live botanical database by keyword ═══
-
-        // Extract target plant noun from user prompt
         let searchKeywords = prompt.replace(/[^\w\s]/gi, ' ').trim();
 
         const promptFillers = [
@@ -896,7 +856,6 @@ const server = http.createServer(async (req, res) => {
 
         const isInsectOrPestQuery = cleanPrompt.includes('pest') || cleanPrompt.includes('bug') || cleanPrompt.includes('aphid') || cleanPrompt.includes('mite') || cleanPrompt.includes('beetle');
 
-        // If we truly have no usable keyword, don't guess a random species — ask for clarification.
         if (!rawQuery || rawQuery.length < 3) {
           return sendJson(200, {
             message: `I'd love to help! Could you share a plant name (e.g. *"Monstera care"*), describe what you're seeing (e.g. *"yellow spots on tomato leaves"*), or upload/paste a photo so I can identify it accurately?`,
@@ -953,7 +912,6 @@ const server = http.createServer(async (req, res) => {
 
         aiMessage = '';
 
-        // Optionally ask Gemini (text-only) to compose a friendlier grounded reply
         if (apiKey) {
           try {
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
@@ -1010,7 +968,6 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // ── 1. SIGNUP ──
     if (pathname === '/api/signup' && req.method === 'POST') {
       const body = await getJsonBody(req);
       const { firstName, lastName, email, password } = body;
@@ -1052,7 +1009,6 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // ── 2. LOGIN ──
     if (pathname === '/api/login' && req.method === 'POST') {
       const body = await getJsonBody(req);
       const { email, password } = body;
@@ -1088,14 +1044,12 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // ── 3. GET USER PROFILE ──
     if (pathname === '/api/me' && req.method === 'GET') {
       const user = await authenticate(req);
       if (!user) return sendJson(401, { error: 'Unauthorized. Please log in.' });
       return sendJson(200, { user });
     }
 
-    // ── 4. GET USER PLANTS ──
     if (pathname === '/api/user-plants' && req.method === 'GET') {
       const user = await authenticate(req);
       if (!user) return sendJson(401, { error: 'Unauthorized. Please log in.' });
@@ -1103,7 +1057,6 @@ const server = http.createServer(async (req, res) => {
       return sendJson(200, { plants });
     }
 
-    // ── 5. ADD USER PLANT ──
     if (pathname === '/api/user-plants' && req.method === 'POST') {
       const user = await authenticate(req);
       if (!user) return sendJson(401, { error: 'Unauthorized. Please log in.' });
@@ -1128,7 +1081,6 @@ const server = http.createServer(async (req, res) => {
       return sendJson(201, { message: 'Plant added successfully!', plant: newPlant });
     }
 
-    // ── 6. DELETE USER PLANT ──
     if (pathname.startsWith('/api/user-plants/') && req.method === 'DELETE') {
       const user = await authenticate(req);
       if (!user) return sendJson(401, { error: 'Unauthorized. Please log in.' });
@@ -1143,7 +1095,6 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // ── 7. MARK WATERED ──
     if (pathname.startsWith('/api/user-plants/') && pathname.endsWith('/water') && req.method === 'PATCH') {
       const user = await authenticate(req);
       if (!user) return sendJson(401, { error: 'Unauthorized. Please log in.' });
@@ -1158,7 +1109,6 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // ── 8. UPDATE PLANT / WATERING REMINDER ──
     if (pathname.startsWith('/api/user-plants/') && req.method === 'PUT') {
       const user = await authenticate(req);
       if (!user) return sendJson(401, { error: 'Unauthorized. Please log in.' });
@@ -1174,7 +1124,6 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // 404 Catch-all
     sendJson(404, { error: 'Endpoint not found.' });
   } catch (err) {
     console.error('Server error:', err);

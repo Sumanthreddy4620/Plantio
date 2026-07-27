@@ -9,7 +9,7 @@ export default function Blog() {
     <>
       <main>
         <div className="FirstComp">
-          {/* Left: text */}
+          
           <div className="FirstComp-text">
             <h4>
               <Link to="/">Plantio → </Link>
@@ -21,7 +21,6 @@ export default function Blog() {
             </p>
           </div>
 
-          {/* Right: search */}
           <div className="FirstComp-search">
             <form onSubmit={(e) => e.preventDefault()}>
               <input

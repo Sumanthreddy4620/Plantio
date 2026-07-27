@@ -134,7 +134,6 @@ export default function BlogDetail() {
           </div>
         )}
 
-        {/* Related posts */}
         <div style={{ marginTop: "48px", borderTop: "1px solid var(--border)", paddingTop: "32px" }}>
           <h2 style={{ fontSize: "1.3rem", fontWeight: 900, marginBottom: "20px" }}>
             More from Plantio Blog

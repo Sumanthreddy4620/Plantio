@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import dataPlant from "./data-plant";
 
 export default function PlantOfDay() {
-  // Changes daily based on date — deterministic, no flicker
   const today = new Date();
   const seed =
     today.getFullYear() * 10000 +
