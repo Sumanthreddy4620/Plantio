@@ -491,10 +491,12 @@ header.scrolled {
 .frame1, .frame2, .frame3, .frame4 {
   display: flex;
   flex-direction: column;
-  flex: 1;
   height: 100%;
   align-self: stretch;
 }
+
+.frame1, .frame4 { flex: 1.2; }
+.frame2, .frame3 { flex: 1; }
 
 .feature-card-wrapper {
   display: flex;
