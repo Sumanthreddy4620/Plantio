@@ -3323,3 +3323,48 @@ aside {
   border-color: #059669;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
+
+/* Modal Quick Action Buttons */
+.modal-quick-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.modal-water-btn {
+  flex: 1;
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  padding: 9px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.modal-water-btn:hover {
+  background: #10b981;
+  color: white;
+}
+
+.modal-ask-ai-btn {
+  flex: 1;
+  background: #f0fdf4;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  padding: 9px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.modal-ask-ai-btn:hover {
+  background: #059669;
+  color: white;
+}

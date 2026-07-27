@@ -30,11 +30,12 @@ export function getWateringStatus(lastWatered, frequencyDays) {
   };
 }
 
-export default function YourGrid({ entry, onDelete, onWater, onEdit }) {
+export default function YourGrid({ entry, onWater, onEdit }) {
   const imgSrc = entry.imgUrl || PLANT_PLACEHOLDER;
   const status = getWateringStatus(entry.lastWatered, entry.wateringFrequency);
 
-  const handleAskAIDoctor = () => {
+  const handleAskAIDoctor = (e) => {
+    e.stopPropagation();
     window.dispatchEvent(
       new CustomEvent("plantio_ai_doctor_ask", {
         detail: {
@@ -45,8 +46,18 @@ export default function YourGrid({ entry, onDelete, onWater, onEdit }) {
     );
   };
 
+  const handleWaterClick = (e) => {
+    e.stopPropagation();
+    if (onWater) onWater();
+  };
+
   return (
-    <div className="your-entry">
+    <div
+      className="your-entry"
+      onClick={onEdit}
+      title="Click to view plant details, edit, or delete"
+      style={{ cursor: "pointer" }}
+    >
       <div className="main-image-container">
         <img
           className="main-image"
@@ -54,31 +65,6 @@ export default function YourGrid({ entry, onDelete, onWater, onEdit }) {
           alt={entry.title}
           onError={(e) => { e.target.src = PLANT_PLACEHOLDER; }}
         />
-        <div className="your-card-top-btns">
-          {onEdit && (
-            <button
-              className="your-edit-btn"
-              onClick={onEdit}
-              title="Modify plant & watering reminder"
-              aria-label="Modify plant"
-            >
-              ✏️
-            </button>
-          )}
-          <button
-            className="your-delete-btn"
-            onClick={onDelete}
-            title="Delete plant"
-            aria-label="Delete plant"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              <line x1="10" y1="11" x2="10" y2="17"></line>
-              <line x1="14" y1="11" x2="14" y2="17"></line>
-            </svg>
-          </button>
-        </div>
       </div>
 
       <div className="your-card-body">
@@ -89,7 +75,7 @@ export default function YourGrid({ entry, onDelete, onWater, onEdit }) {
           <button
             type="button"
             className={`watering-badge-btn ${status.cls}`}
-            onClick={onWater}
+            onClick={handleWaterClick}
             title="Click to mark as watered today"
           >
             {status.label}

@@ -373,7 +373,16 @@ export default function YourComp() {
       {editingPlant && (
         <div className="popup" onClick={(e) => e.target === e.currentTarget && setEditingPlant(null)}>
           <form onSubmit={handleUpdateSubmit}>
-            <h3>✏️ Modify Plant & Reminder</h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+              <h3 style={{ margin: 0 }}>🌿 Manage Plant Details</h3>
+              <button
+                type="button"
+                onClick={() => setEditingPlant(null)}
+                style={{ background: "none", border: "none", fontSize: "1.2rem", cursor: "pointer", color: "var(--text-muted)" }}
+              >
+                ✕
+              </button>
+            </div>
 
             <input
               name="title"
@@ -448,13 +457,66 @@ export default function YourComp() {
               title="Last watered date"
             />
 
-            <div className="popup-actions">
-              <button type="submit" className="submit-btn" style={{ background: "var(--primary)" }}>
-                Save Changes
+            {/* Quick Actions inside Modal */}
+            <div className="modal-quick-actions">
+              <button
+                type="button"
+                className="modal-water-btn"
+                onClick={async () => {
+                  await handleWater(editingPlant.id);
+                  setEditFormData(prev => ({ ...prev, lastWatered: new Date().toISOString().split("T")[0] }));
+                }}
+              >
+                💧 Water Now
               </button>
-              <button type="button" className="cancel-btn" onClick={() => setEditingPlant(null)}>
-                Cancel
+
+              <button
+                type="button"
+                className="modal-ask-ai-btn"
+                onClick={() => {
+                  window.dispatchEvent(
+                    new CustomEvent("plantio_ai_doctor_ask", {
+                      detail: {
+                        prompt: `Give me tailored care, sunlight, and fertilizer advice for my ${editingPlant.title}`,
+                        imageUrl: editingPlant.imgUrl
+                      }
+                    })
+                  );
+                }}
+              >
+                ✨ Ask AI Doctor
               </button>
+            </div>
+
+            {/* Submit / Delete / Cancel Actions */}
+            <div className="popup-actions" style={{ flexDirection: "column", gap: "8px", marginTop: "16px" }}>
+              <button type="submit" className="submit-btn" style={{ background: "var(--primary)", width: "100%" }}>
+                💾 Save Changes
+              </button>
+              
+              <div style={{ display: "flex", gap: "8px", width: "100%" }}>
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  style={{ flex: 1 }}
+                  onClick={() => setEditingPlant(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="remove-photo-btn"
+                  style={{ flex: 1, padding: "10px" }}
+                  onClick={() => {
+                    if (window.confirm(`Are you sure you want to delete ${editingPlant.title}?`)) {
+                      handleDelete(editingPlant.id);
+                      setEditingPlant(null);
+                    }
+                  }}
+                >
+                  🗑 Delete Plant
+                </button>
+              </div>
             </div>
           </form>
         </div>
@@ -542,7 +604,6 @@ export default function YourComp() {
                   <YourGrid
                     key={entry.id}
                     entry={entry}
-                    onDelete={() => handleDelete(entry.id)}
                     onWater={() => handleWater(entry.id)}
                     onEdit={() => startEdit(entry)}
                   />
