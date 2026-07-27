@@ -267,26 +267,52 @@ export default function YourComp() {
         +
       </button>
 
-      {/* Popup form */}
+      {/* Popup form for Add Plant */}
       {showForm && (
         <div className="popup" onClick={(e) => e.target === e.currentTarget && setShowForm(false)}>
-          <form onSubmit={handleSubmit}>
-            <h3>🌱 Add Plant to Database</h3>
+          <form onSubmit={handleSubmit} className="modal-card-form">
+            {/* Modal Header */}
+            <div className="modal-header-row">
+              <div>
+                <h3 className="modal-title">🌱 Add New Plant</h3>
+                <p className="modal-subtitle">Add a plant to your garden to set watering reminders</p>
+              </div>
+              <button
+                type="button"
+                className="modal-close-icon"
+                onClick={() => setShowForm(false)}
+                title="Close modal"
+              >
+                ✕
+              </button>
+            </div>
 
-            <input
-              name="title"
-              placeholder="Plant name *"
-              value={formData.title}
-              onChange={handleChange}
-              required
-            />
-            <textarea
-              name="text"
-              placeholder="Description or notes"
-              value={formData.text}
-              onChange={handleChange}
-            />
-            {/* Photo Selection from device gallery or folder */}
+            {/* Field: Plant Name */}
+            <div className="modal-field-group">
+              <label className="modal-field-label">Plant Name *</label>
+              <input
+                name="title"
+                placeholder="e.g. Monstera Deliciosa, Basil, Coriander"
+                value={formData.title}
+                onChange={handleChange}
+                required
+                className="modal-input"
+              />
+            </div>
+
+            {/* Field: Notes / Scientific Name */}
+            <div className="modal-field-group">
+              <label className="modal-field-label">Notes or Scientific Name</label>
+              <input
+                name="text"
+                placeholder="e.g. Indoor plant near window"
+                value={formData.text}
+                onChange={handleChange}
+                className="modal-input"
+              />
+            </div>
+
+            {/* Photo Selection */}
             <div className="form-photo-picker">
               {formData.imgUrl ? (
                 <div className="photo-preview-box">
@@ -296,18 +322,18 @@ export default function YourComp() {
                     className="remove-photo-btn"
                     onClick={() => setFormData(prev => ({ ...prev, imgUrl: "" }))}
                   >
-                    🗑 Remove Photo
+                    🗑 Change / Remove Photo
                   </button>
                 </div>
               ) : (
                 <div className="photo-dropzone">
                   <label htmlFor="plant-photo-input" className="photo-upload-label">
-                    <span style={{ fontSize: "1.8rem" }}>📸</span>
-                    <span style={{ fontWeight: 800, fontSize: "0.9rem", color: "var(--primary-dark)" }}>
-                      Select Photo from Gallery or Folder
+                    <span style={{ fontSize: "1.6rem" }}>📸</span>
+                    <span style={{ fontWeight: 800, fontSize: "0.86rem", color: "var(--primary-dark)" }}>
+                      Upload Plant Photo
                     </span>
-                    <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
-                      Click to choose an image file from your device
+                    <span style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
+                      Click to choose image file from device
                     </span>
                   </label>
                   <input
@@ -336,32 +362,54 @@ export default function YourComp() {
                   placeholder="Paste Image URL..."
                   value={formData.imgUrl}
                   onChange={handleChange}
+                  className="modal-input"
+                  style={{ marginTop: "6px" }}
                 />
               )}
             </div>
-            <select
-              name="wateringFrequency"
-              value={formData.wateringFrequency}
-              onChange={handleChange}
-            >
-              <option value="1">💧 Water every day</option>
-              <option value="2">💧 Every 2 days</option>
-              <option value="3">💧 Every 3 days</option>
-              <option value="7">💧 Every week</option>
-              <option value="14">💧 Every 2 weeks</option>
-              <option value="30">💧 Every month</option>
-            </select>
-            <input
-              name="lastWatered"
-              type="date"
-              value={formData.lastWatered}
-              onChange={handleChange}
-              title="Last watered date"
-            />
 
-            <div className="popup-actions">
-              <button type="submit" className="submit-btn">Save to DB</button>
-              <button type="button" className="cancel-btn" onClick={() => setShowForm(false)}>
+            {/* 2-Column Schedule Grid */}
+            <div className="modal-schedule-grid">
+              <div className="modal-field-group">
+                <label className="modal-field-label">Watering Frequency</label>
+                <select
+                  name="wateringFrequency"
+                  value={formData.wateringFrequency}
+                  onChange={handleChange}
+                  className="modal-input"
+                >
+                  <option value="1">💧 Every day (1d)</option>
+                  <option value="2">💧 Every 2 days</option>
+                  <option value="3">💧 Every 3 days</option>
+                  <option value="7">💧 Every week (7d)</option>
+                  <option value="14">💧 Every 2 weeks</option>
+                  <option value="30">💧 Monthly (30d)</option>
+                </select>
+              </div>
+
+              <div className="modal-field-group">
+                <label className="modal-field-label">Last Watered Date</label>
+                <input
+                  name="lastWatered"
+                  type="date"
+                  value={formData.lastWatered}
+                  onChange={handleChange}
+                  className="modal-input"
+                />
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="modal-footer-actions" style={{ borderTop: "none", paddingTop: "4px" }}>
+              <button type="submit" className="modal-save-btn">
+                🌱 Add Plant to Garden
+              </button>
+              <button
+                type="button"
+                className="modal-cancel-link"
+                style={{ textAlign: "center", marginTop: "4px" }}
+                onClick={() => setShowForm(false)}
+              >
                 Cancel
               </button>
             </div>
@@ -632,9 +680,13 @@ export default function YourComp() {
                 ))}
 
                 {/* Add card */}
-                <div className="your-add-entry" onClick={() => setShowForm(true)}>
-                  <div className="Add-div" style={{ pointerEvents: "none" }}>+</div>
-                  <span>Add a plant</span>
+                <div className="your-add-entry" onClick={() => setShowForm(true)} title="Add a new plant to your garden">
+                  <div className="add-card-badge">
+                    <span className="add-card-icon">🌱</span>
+                    <span className="add-card-plus">+</span>
+                  </div>
+                  <h4 className="add-card-title">Add New Plant</h4>
+                  <p className="add-card-subtitle">Track watering & growth</p>
                 </div>
               </article>
             )}

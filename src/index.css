@@ -988,25 +988,81 @@ aside {
   display: flex;
   flex-direction: column;
   width: 220px;
-  height: 295px;
-  border: 2px dashed var(--border);
-  border-radius: var(--radius);
+  min-height: 320px;
+  height: auto;
+  border: 2px dashed #a7f3d0;
+  border-radius: 16px;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  transition: all 0.25s ease;
+  gap: 10px;
+  padding: 24px 16px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
-  color: var(--text-muted);
-  background: var(--bg);
-  font-size: 0.9rem;
-  font-weight: 600;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  box-sizing: border-box;
 }
 
 .your-add-entry:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--primary-light);
-  transform: translateY(-5px);
+  border-color: #10b981;
+  background: linear-gradient(135deg, #e6f4ea 0%, #d1fae5 100%);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 36px rgba(16, 185, 129, 0.2);
+}
+
+.add-card-badge {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #a7f3d0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(4, 191, 148, 0.15);
+  transition: transform 0.25s ease;
+}
+
+.your-add-entry:hover .add-card-badge {
+  transform: scale(1.1) rotate(6deg);
+  border-color: #10b981;
+}
+
+.add-card-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.add-card-plus {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: #10b981;
+  color: white;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.95rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+.add-card-title {
+  margin: 6px 0 2px;
+  font-size: 1rem;
+  font-weight: 900;
+  color: #047857;
+}
+
+.add-card-subtitle {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #059669;
+  text-align: center;
 }
 
 .plant-entry:hover, .Blog-entry:hover, .your-entry:hover {
