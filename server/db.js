@@ -175,17 +175,22 @@ export const db = {
       .eq('user_id', userId)
       .select('*')
       .maybeSingle();
+
+    if (error && error.message && (error.message.includes('growth_journal') || error.message.includes('column'))) {
+      delete updates.growth_journal;
+      const retry = await supabase
+        .from('user_plants')
+        .update(updates)
+        .eq('id', id)
+        .eq('user_id', userId)
+        .select('*')
+        .maybeSingle();
+      data = retry.data;
+      error = retry.error;
+    }
+
     if (error) { console.error('updatePlant error:', error.message); return null; }
     if (!data) return null;
-    return {
-      id: String(data.id),
-      userId: data.user_id,
-      title: data.title,
-      text: data.text || '',
-      imgUrl: data.img_url || '',
-      wateringFrequency: data.watering_frequency || '7',
-      lastWatered: data.last_watered,
-      createdAt: data.created_at
-    };
+    return extractPlantData(data);
   }
 };

@@ -194,18 +194,36 @@ export default function YourComp() {
     });
   }
 
-  function handleJournalFileSelect(e) {
+  async function handleJournalFileSelect(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Please select an image smaller than 5MB.");
-      return;
+    try {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 450;
+          if (width > height) {
+            if (width > maxDim) { height = Math.round((height * maxDim) / width); width = maxDim; }
+          } else {
+            if (height > maxDim) { width = Math.round((width * maxDim) / height); height = maxDim; }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", 0.7);
+          setNewJournalEntry((prev) => ({ ...prev, imgUrl: compressed }));
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("File selection error:", err);
     }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setNewJournalEntry((prev) => ({ ...prev, imgUrl: event.target.result }));
-    };
-    reader.readAsDataURL(file);
   }
 
   function handleAddJournalEntry() {
