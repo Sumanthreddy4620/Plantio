@@ -372,33 +372,49 @@ export default function YourComp() {
       {/* Modify / Edit Plant Popup Form */}
       {editingPlant && (
         <div className="popup" onClick={(e) => e.target === e.currentTarget && setEditingPlant(null)}>
-          <form onSubmit={handleUpdateSubmit}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-              <h3 style={{ margin: 0 }}>🌿 Manage Plant Details</h3>
+          <form onSubmit={handleUpdateSubmit} className="modal-card-form">
+            {/* Modal Header */}
+            <div className="modal-header-row">
+              <div>
+                <h3 className="modal-title">🌱 Manage Plant Details</h3>
+                <p className="modal-subtitle">Update schedule, notes, or consult AI Doctor</p>
+              </div>
               <button
                 type="button"
+                className="modal-close-icon"
                 onClick={() => setEditingPlant(null)}
-                style={{ background: "none", border: "none", fontSize: "1.2rem", cursor: "pointer", color: "var(--text-muted)" }}
+                title="Close modal"
               >
                 ✕
               </button>
             </div>
 
-            <input
-              name="title"
-              placeholder="Plant name *"
-              value={editFormData.title}
-              onChange={handleEditChange}
-              required
-            />
-            <textarea
-              name="text"
-              placeholder="Description or notes"
-              value={editFormData.text}
-              onChange={handleEditChange}
-            />
+            {/* Field: Plant Name */}
+            <div className="modal-field-group">
+              <label className="modal-field-label">Plant Name *</label>
+              <input
+                name="title"
+                placeholder="e.g. Coriander"
+                value={editFormData.title}
+                onChange={handleEditChange}
+                required
+                className="modal-input"
+              />
+            </div>
 
-            {/* Photo Selection from device gallery or folder */}
+            {/* Field: Notes / Scientific Name */}
+            <div className="modal-field-group">
+              <label className="modal-field-label">Scientific Name or Notes</label>
+              <input
+                name="text"
+                placeholder="e.g. Coriandrum sativum / Keep near sunlight"
+                value={editFormData.text}
+                onChange={handleEditChange}
+                className="modal-input"
+              />
+            </div>
+
+            {/* Photo Selection */}
             <div className="form-photo-picker">
               {editFormData.imgUrl ? (
                 <div className="photo-preview-box">
@@ -408,15 +424,15 @@ export default function YourComp() {
                     className="remove-photo-btn"
                     onClick={() => setEditFormData(prev => ({ ...prev, imgUrl: "" }))}
                   >
-                    🗑 Remove Photo
+                    🗑 Change / Remove Photo
                   </button>
                 </div>
               ) : (
                 <div className="photo-dropzone">
                   <label htmlFor="edit-photo-input" className="photo-upload-label">
-                    <span style={{ fontSize: "1.8rem" }}>📸</span>
-                    <span style={{ fontWeight: 800, fontSize: "0.9rem", color: "var(--primary-dark)" }}>
-                      Change Photo from Gallery
+                    <span style={{ fontSize: "1.6rem" }}>📸</span>
+                    <span style={{ fontWeight: 800, fontSize: "0.86rem", color: "var(--primary-dark)" }}>
+                      Upload Plant Photo
                     </span>
                   </label>
                   <input
@@ -430,34 +446,38 @@ export default function YourComp() {
               )}
             </div>
 
-            <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "-4px" }}>
-              Watering Reminder Frequency:
-            </label>
-            <select
-              name="wateringFrequency"
-              value={editFormData.wateringFrequency}
-              onChange={handleEditChange}
-            >
-              <option value="1">💧 Water every day (1 day)</option>
-              <option value="2">💧 Every 2 days</option>
-              <option value="3">💧 Every 3 days</option>
-              <option value="7">💧 Every week (7 days)</option>
-              <option value="14">💧 Every 2 weeks (14 days)</option>
-              <option value="30">💧 Every month (30 days)</option>
-            </select>
+            {/* 2-Column Schedule Grid */}
+            <div className="modal-schedule-grid">
+              <div className="modal-field-group">
+                <label className="modal-field-label">Watering Frequency</label>
+                <select
+                  name="wateringFrequency"
+                  value={editFormData.wateringFrequency}
+                  onChange={handleEditChange}
+                  className="modal-input"
+                >
+                  <option value="1">💧 Every day (1d)</option>
+                  <option value="2">💧 Every 2 days</option>
+                  <option value="3">💧 Every 3 days</option>
+                  <option value="7">💧 Every week (7d)</option>
+                  <option value="14">💧 Every 2 weeks</option>
+                  <option value="30">💧 Monthly (30d)</option>
+                </select>
+              </div>
 
-            <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "-4px" }}>
-              Last Watered Date:
-            </label>
-            <input
-              name="lastWatered"
-              type="date"
-              value={editFormData.lastWatered}
-              onChange={handleEditChange}
-              title="Last watered date"
-            />
+              <div className="modal-field-group">
+                <label className="modal-field-label">Last Watered Date</label>
+                <input
+                  name="lastWatered"
+                  type="date"
+                  value={editFormData.lastWatered}
+                  onChange={handleEditChange}
+                  className="modal-input"
+                />
+              </div>
+            </div>
 
-            {/* Quick Actions inside Modal */}
+            {/* Quick Actions Row */}
             <div className="modal-quick-actions">
               <button
                 type="button"
@@ -469,7 +489,7 @@ export default function YourComp() {
                   setEditingPlant(prev => (prev ? { ...prev, lastWatered: todayStr } : null));
                 }}
               >
-                💧 Water Now
+                💧 Water Plant Now
               </button>
 
               <button
@@ -490,25 +510,23 @@ export default function YourComp() {
               </button>
             </div>
 
-            {/* Submit / Delete / Cancel Actions */}
-            <div className="popup-actions" style={{ flexDirection: "column", gap: "8px", marginTop: "16px" }}>
-              <button type="submit" className="submit-btn" style={{ background: "var(--primary)", width: "100%" }}>
+            {/* Primary Submit & Secondary Delete/Cancel */}
+            <div className="modal-footer-actions">
+              <button type="submit" className="modal-save-btn">
                 💾 Save Changes
               </button>
-              
-              <div style={{ display: "flex", gap: "8px", width: "100%" }}>
+
+              <div className="modal-secondary-links">
                 <button
                   type="button"
-                  className="cancel-btn"
-                  style={{ flex: 1 }}
+                  className="modal-cancel-link"
                   onClick={() => setEditingPlant(null)}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  className="remove-photo-btn"
-                  style={{ flex: 1, padding: "10px" }}
+                  className="modal-delete-link"
                   onClick={() => {
                     if (window.confirm(`Are you sure you want to delete ${editingPlant.title}?`)) {
                       handleDelete(editingPlant.id);
