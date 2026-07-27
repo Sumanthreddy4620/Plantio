@@ -51,10 +51,23 @@ export default function Discomp({ searchText }) {
       if (!isMounted.current) return;
 
       const newDiseases = data.diseases || [];
-      setDiseases((prev) => isReset ? newDiseases : [...prev, ...newDiseases]);
-      setTotalCount(data.total || null);
-      setHasMore(pageNum < (data.lastPage || 1));
-      setUsingFallback(false);
+      if (newDiseases.length === 0 && isReset) {
+        const catFilter = selectedCategory === "All"
+          ? dataDis
+          : dataDis.filter((item) => item.category === selectedCategory);
+        const filtered = catFilter.filter((item) =>
+          item.title.toLowerCase().includes(debouncedSearch.toLowerCase())
+        );
+        setDiseases(filtered);
+        setTotalCount(filtered.length);
+        setHasMore(false);
+        setUsingFallback(true);
+      } else {
+        setDiseases((prev) => isReset ? newDiseases : [...prev, ...newDiseases]);
+        setTotalCount(data.total || newDiseases.length);
+        setHasMore(pageNum < (data.lastPage || 1));
+        setUsingFallback(false);
+      }
     } catch {
       if (!isMounted.current) return;
       if (isReset) {
