@@ -87,64 +87,43 @@ export const db = {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
-    return (data || []).map((row) => {
-      let journal = [];
-      try {
-        if (row.growth_journal) {
-          journal = typeof row.growth_journal === 'string' ? JSON.parse(row.growth_journal) : row.growth_journal;
-        }
-      } catch (e) {}
-
-      return {
-        id: String(row.id),
-        userId: row.user_id,
-        title: row.title,
-        text: row.text || '',
-        imgUrl: row.img_url || '',
-        wateringFrequency: row.watering_frequency || '7',
-        lastWatered: row.last_watered,
-        createdAt: row.created_at,
-        growthJournal: Array.isArray(journal) ? journal : []
-      };
-    });
+    return (data || []).map(extractPlantData);
   },
 
   // ── Create plant ──────────────────────────────────────────────────────────
   async createPlant({ userId, title, text, imgUrl, wateringFrequency, lastWatered, growthJournal }) {
+    const packedText = packPlantText(text, growthJournal);
     const journalData = Array.isArray(growthJournal) ? JSON.stringify(growthJournal) : (growthJournal || '[]');
-    const { data, error } = await supabase
+    
+    let insertObj = {
+      user_id: userId,
+      title,
+      text: packedText,
+      img_url: imgUrl || '',
+      watering_frequency: String(wateringFrequency || 7),
+      last_watered: lastWatered || new Date().toISOString().split('T')[0],
+      growth_journal: journalData
+    };
+
+    let { data, error } = await supabase
       .from('user_plants')
-      .insert({
-        user_id: userId,
-        title,
-        text: text || '',
-        img_url: imgUrl || '',
-        watering_frequency: String(wateringFrequency || 7),
-        last_watered: lastWatered || new Date().toISOString().split('T')[0],
-        growth_journal: journalData
-      })
+      .insert(insertObj)
       .select('*')
       .single();
+
+    if (error && error.message && error.message.includes('growth_journal')) {
+      delete insertObj.growth_journal;
+      const retry = await supabase
+        .from('user_plants')
+        .insert(insertObj)
+        .select('*')
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
+
     if (error) throw new Error(error.message);
-
-    let journal = [];
-    try {
-      if (data.growth_journal) {
-        journal = typeof data.growth_journal === 'string' ? JSON.parse(data.growth_journal) : data.growth_journal;
-      }
-    } catch (e) {}
-
-    return {
-      id: String(data.id),
-      userId: data.user_id,
-      title: data.title,
-      text: data.text || '',
-      imgUrl: data.img_url || '',
-      wateringFrequency: data.watering_frequency || '7',
-      lastWatered: data.last_watered,
-      createdAt: data.created_at,
-      growthJournal: Array.isArray(journal) ? journal : []
-    };
+    return extractPlantData(data);
   },
 
   // ── Delete plant ──────────────────────────────────────────────────────────
@@ -176,15 +155,20 @@ export const db = {
   async updatePlant(id, userId, { title, text, imgUrl, wateringFrequency, lastWatered, growthJournal }) {
     const updates = {};
     if (title !== undefined) updates.title = title.trim();
-    if (text !== undefined) updates.text = text;
     if (imgUrl !== undefined) updates.img_url = imgUrl;
     if (wateringFrequency !== undefined) updates.watering_frequency = String(wateringFrequency);
     if (lastWatered !== undefined) updates.last_watered = lastWatered;
+
+    let packedText = text;
     if (growthJournal !== undefined) {
+      packedText = packPlantText(text !== undefined ? text : '', growthJournal);
       updates.growth_journal = Array.isArray(growthJournal) ? JSON.stringify(growthJournal) : growthJournal;
     }
+    if (packedText !== undefined) {
+      updates.text = packedText;
+    }
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('user_plants')
       .update(updates)
       .eq('id', id)
