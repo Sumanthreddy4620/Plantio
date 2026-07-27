@@ -13,7 +13,6 @@ export default function Homegrid() {
     <main className="home-grid">
       <div className="home-second-frame1">
         
-        {/* Frame 1: AI Doctor & Instant Disease Scan */}
         <div className="frame1">
           <div className="feature-card-wrapper light-meter-card">
             <div className="card-badge">🤖 AI Vision Scanner</div>
@@ -37,7 +36,6 @@ export default function Homegrid() {
           </div>
         </div>
 
-        {/* Frame 2: Intelligent Water Tracker */}
         <div className="frame2">
           <div className="feature-card-wrapper watering-card">
             <div className="card-badge dark-badge">💧 Smart Schedule</div>
@@ -60,7 +58,6 @@ export default function Homegrid() {
 
       <div className="home-second-frame2">
         
-        {/* Frame 3: Growth Journal & Progress Photos */}
         <div className="frame3">
           <div className="feature-card-wrapper journal-card">
             <div className="card-badge">📸 Photo Timeline</div>
@@ -79,7 +76,6 @@ export default function Homegrid() {
           </div>
         </div>
 
-        {/* Frame 4: Botanical Library */}
         <div className="frame4">
           <div className="feature-card-wrapper disease-card">
             <div className="card-badge">🌿 Botanical Library</div>

@@ -5,7 +5,6 @@ export default function First() {
     <main className="home">
       <div className="home-hero-container">
         
-        {/* Left Hero Content */}
         <div className="home-first">
           <div className="hero-pill-badge">
             <span className="pill-sparkle">✨</span>
@@ -18,7 +17,6 @@ export default function First() {
             Scan plant diseases instantly with our <strong>AI Doctor</strong>, log dated progress photo journals over time, get automated watering care reminders, and explore over 300,000+ botanical species.
           </p>
 
-          {/* Action CTAs */}
           <div className="hero-actions">
             <button
               type="button"
@@ -39,7 +37,6 @@ export default function First() {
             </Link>
           </div>
 
-          {/* Quick Feature Badges */}
           <div className="hero-highlights">
             <div className="hero-highlight-item">
               <span className="hl-icon">🤖</span>
@@ -56,7 +53,6 @@ export default function First() {
           </div>
         </div>
 
-        {/* Floating Stats Bar */}
         <div className="hero-stats-bar">
           <div className="hero-stat-item">
             <h4>300,000+</h4>
