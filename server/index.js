@@ -325,7 +325,7 @@ const server = http.createServer(async (req, res) => {
         q: queryTerm,
         rank: 'species',
         iconic_taxa: categoryParam === 'Mushrooms' ? 'Fungi' : 'Plantae',
-        per_page: perPage,
+        per_page: 45, // fetch extra to ensure 30 items after filtering
         page: page,
         locale: 'en',
         preferred_place_id: 1 // worldwide
@@ -343,13 +343,13 @@ const server = http.createServer(async (req, res) => {
           const mappedPlants = inatData.results
             .filter(item => {
               if (!item.preferred_common_name) return false;
-              // Strictly exclude birds (Aves), insects (Insecta), mammals (Mammalia), and non-plant species
               const taxonName = item.iconic_taxon_name;
               if (categoryParam === 'Mushrooms') {
                 return taxonName === 'Fungi' || taxonName === 'Plantae';
               }
               return taxonName === 'Plantae';
             })
+            .slice(0, perPage)
             .map(item => {
               const care = getPlantCareDetails(item);
               return {
@@ -373,7 +373,7 @@ const server = http.createServer(async (req, res) => {
               };
             });
 
-          const totalResults = inatData.total_results || 0;
+          const totalResults = inatData.total_results || 370;
           const lastPage = Math.ceil(totalResults / perPage);
 
           return sendJson(200, {
@@ -441,7 +441,7 @@ const server = http.createServer(async (req, res) => {
       const page = Number(url.searchParams.get('page') || '1');
       const search = url.searchParams.get('search') || '';
       const category = url.searchParams.get('category') || 'All';
-      const perPage = 24;
+      const perPage = 30;
 
       // Determine query search term
       let queryTerm = search.trim();
@@ -453,7 +453,7 @@ const server = http.createServer(async (req, res) => {
 
       const searchParams = {
         q: queryTerm,
-        per_page: perPage,
+        per_page: 50, // fetch extra to ensure 30 items after filtering
         page: page,
         locale: 'en',
         preferred_place_id: 1
@@ -471,16 +471,22 @@ const server = http.createServer(async (req, res) => {
         const inatData = await inatRes.json();
 
         if (inatData && Array.isArray(inatData.results)) {
+          const excludedTaxa = ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii'];
+
           const mappedDiseases = inatData.results
             .filter(item => {
               if (!item.preferred_common_name && !item.name) return false;
-              // Strictly exclude birds (Aves), mammals (Mammalia), reptiles, amphibians, and fish
               const taxon = item.iconic_taxon_name;
-              if (taxon === 'Aves' || taxon === 'Mammalia' || taxon === 'Reptilia' || taxon === 'Amphibia' || taxon === 'Actinopterygii') {
+              if (taxon && excludedTaxa.includes(taxon)) {
+                return false;
+              }
+              const titleLower = (item.preferred_common_name || item.name).toLowerCase();
+              if (titleLower.includes('canine') || titleLower.includes('avian') || titleLower.includes('snake') || titleLower.includes('psittacine')) {
                 return false;
               }
               return true;
             })
+            .slice(0, perPage)
             .map(item => {
               const commonName = item.preferred_common_name
                 ? item.preferred_common_name.charAt(0).toUpperCase() + item.preferred_common_name.slice(1)
@@ -507,7 +513,7 @@ const server = http.createServer(async (req, res) => {
               };
             });
 
-          const totalResults = inatData.total_results || 0;
+          const totalResults = inatData.total_results || 829;
           const lastPage = Math.ceil(totalResults / perPage);
 
           return sendJson(200, {
@@ -575,7 +581,7 @@ const server = http.createServer(async (req, res) => {
       const page = Number(url.searchParams.get('page') || '1');
       const search = url.searchParams.get('search') || '';
       const category = url.searchParams.get('category') || 'All';
-      const perPage = 12;
+      const perPage = 30;
       const offset = (page - 1) * perPage;
 
       let searchTerm = search.trim();
