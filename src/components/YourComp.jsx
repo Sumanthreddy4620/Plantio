@@ -463,8 +463,10 @@ export default function YourComp() {
                 type="button"
                 className="modal-water-btn"
                 onClick={async () => {
+                  const todayStr = new Date().toISOString().split("T")[0];
                   await handleWater(editingPlant.id);
-                  setEditFormData(prev => ({ ...prev, lastWatered: new Date().toISOString().split("T")[0] }));
+                  setEditFormData(prev => ({ ...prev, lastWatered: todayStr }));
+                  setEditingPlant(prev => (prev ? { ...prev, lastWatered: todayStr } : null));
                 }}
               >
                 💧 Water Now

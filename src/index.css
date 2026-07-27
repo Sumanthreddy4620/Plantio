@@ -1521,48 +1521,61 @@ aside {
 .popup {
   position: fixed;
   inset: 0;
-  background: rgba(5, 30, 15, 0.55);
-  backdrop-filter: blur(6px);
+  background: rgba(4, 25, 15, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 10000;
+  padding: 16px;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .popup form {
   display: flex;
   flex-direction: column;
-  background: white;
-  padding: 36px;
+  background: #ffffff;
+  padding: 32px 30px;
   border-radius: 24px;
-  width: 420px;
+  width: 440px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
   gap: 14px;
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(4, 191, 148, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
-.popup form h3 { font-size: 1.4rem; font-weight: 900; color: var(--text); }
+.popup form h3 {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: var(--text);
+  margin: 0;
+}
 
 .popup form > input, .popup form > textarea, .popup form > select {
   width: 100%;
   height: 44px;
-  border-radius: 10px;
-  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
   padding: 0 14px;
   font-family: var(--font);
-  font-size: 0.93rem;
-  background: var(--bg);
+  font-size: 0.92rem;
+  background: #f8faf9;
   color: var(--text);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .popup form > input:focus, .popup form > textarea:focus, .popup form > select:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-glow);
-  background: white;
+  border-color: #10b981;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+  background: #ffffff;
 }
 
-.popup form > textarea { height: 80px; padding: 12px 14px; resize: none; }
+.popup form > textarea { height: 76px; padding: 10px 14px; resize: none; }
 .popup form > select { cursor: pointer; padding: 0 14px; }
 
 .popup-actions { display: flex; gap: 12px; margin-top: 4px; }

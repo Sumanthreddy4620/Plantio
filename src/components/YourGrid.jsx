@@ -2,27 +2,39 @@ const PLANT_PLACEHOLDER =
   "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80";
 
 export function getWateringStatus(lastWatered, frequencyDays) {
-  const last = new Date(lastWatered);
-  const today = new Date();
-  const daysSince = Math.floor((today - last) / (1000 * 60 * 60 * 24));
+  if (!lastWatered) {
+    return { label: "💧 Water now!", cls: "due", statusType: "overdue" };
+  }
+
+  // Normalize dates to clean YYYY-MM-DD string format
+  const lastStr = String(lastWatered).split("T")[0];
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  const lastDate = new Date(lastStr + "T00:00:00");
+  const todayDate = new Date(todayStr + "T00:00:00");
+
+  const diffTime = todayDate.getTime() - lastDate.getTime();
+  const daysSince = Math.round(diffTime / (1000 * 60 * 60 * 24));
   const freq = parseInt(frequencyDays, 10) || 7;
+
   const diff = freq - daysSince;
 
-  if (diff < 0) {
-    const overDays = Math.abs(diff);
+  if (daysSince >= freq) {
+    const overdueDays = daysSince - freq;
+    if (overdueDays === 0) {
+      return { label: "🟡 Water Today", cls: "soon", statusType: "soon" };
+    }
     return {
-      label: `🔴 Overdue by ${overDays}d (Water now!)`,
+      label: `🔴 Overdue by ${overdueDays}d (Water now!)`,
       cls: "due",
       statusType: "overdue"
     };
   }
-  if (diff === 0 || diff === 1) {
-    return {
-      label: "🟡 Water Today",
-      cls: "soon",
-      statusType: "soon"
-    };
+
+  if (diff === 1) {
+    return { label: "🟢 Watered (1d left)", cls: "ok", statusType: "ok" };
   }
+
   return {
     label: `🟢 Watered (${diff}d left)`,
     cls: "ok",
