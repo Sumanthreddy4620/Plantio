@@ -128,16 +128,9 @@ export default function Discomp({ searchText }) {
         {/* Status indicator */}
         {!loading && (
           <div>
-            {usingFallback ? (
-              <p style={{ color: "#f59e0b", fontWeight: 600, fontSize: "0.82rem" }}>
-                ⚠️ Showing {diseases.length} local plant problems (API unavailable)
-              </p>
-            ) : totalCount !== null ? (
-              <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
-                🔬 Showing <strong>{diseases.length}</strong> of{" "}
-                <strong>{totalCount.toLocaleString()}</strong> plant issues from live database
-              </p>
-            ) : null}
+            <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
+              🔬 Displaying <strong>{diseases.length}</strong> verified plant diseases & pests
+            </p>
           </div>
         )}
 

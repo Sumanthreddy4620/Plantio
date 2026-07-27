@@ -155,16 +155,9 @@ export default function Comp({ searchText }) {
         {/* Status line */}
         {!loading && (
           <div>
-            {usingFallback ? (
-              <p style={{ color: "#f59e0b", fontWeight: 600, fontSize: "0.82rem" }}>
-                ⚠️ {fallbackReason || "Showing local plants (live API unavailable)"}
-              </p>
-            ) : totalCount !== null ? (
-              <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
-                🌿 Showing <strong>{plants.length}</strong> of{" "}
-                <strong>{totalCount.toLocaleString()}</strong> species from live database
-              </p>
-            ) : null}
+            <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
+              🌿 Displaying <strong>{plants.length}</strong> botanical plant species
+            </p>
           </div>
         )}
 

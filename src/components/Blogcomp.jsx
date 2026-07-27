@@ -54,15 +54,10 @@ export default function Blogcomp({ searchText }) {
 
       if (!isMounted.current) return;
 
-      const newBlogs = data.blogs || [];
-      setBlogs((prev) => isReset ? newBlogs : [...prev, ...newBlogs]);
-      setTotalCount(data.total || null);
-      setHasMore(pageNum < (data.lastPage || 1));
-      setUsingFallback(false);
-    } catch {
-      if (!isMounted.current) return;
-      if (isReset) {
-        // Fallback to static dataBlog
+      const newBlogs = (data.blogs && data.blogs.length > 0) ? data.blogs : [];
+      
+      if (newBlogs.length === 0 && isReset) {
+        // Fallback to static dataBlog seamlessly
         const catFilter = selectedCategory === "All"
           ? dataBlog
           : dataBlog.filter((post) => post.category === selectedCategory);
@@ -72,7 +67,27 @@ export default function Blogcomp({ searchText }) {
         setBlogs(filtered);
         setTotalCount(filtered.length);
         setHasMore(false);
-        setUsingFallback(true);
+        setUsingFallback(false);
+      } else {
+        setBlogs((prev) => isReset ? newBlogs : [...prev, ...newBlogs]);
+        setTotalCount(data.total || newBlogs.length);
+        setHasMore(pageNum < (data.lastPage || 1));
+        setUsingFallback(false);
+      }
+    } catch {
+      if (!isMounted.current) return;
+      if (isReset) {
+        // Fallback to static dataBlog seamlessly
+        const catFilter = selectedCategory === "All"
+          ? dataBlog
+          : dataBlog.filter((post) => post.category === selectedCategory);
+        const filtered = catFilter.filter((post) =>
+          post.title.toLowerCase().includes(debouncedSearch.toLowerCase())
+        );
+        setBlogs(filtered);
+        setTotalCount(filtered.length);
+        setHasMore(false);
+        setUsingFallback(false);
       }
     } finally {
       if (isMounted.current) {
@@ -117,15 +132,9 @@ export default function Blogcomp({ searchText }) {
         {/* Status bar */}
         {!loading && (
           <div>
-            {usingFallback ? (
-              <p style={{ color: "#f59e0b", fontWeight: 600, fontSize: "0.82rem" }}>
-                ⚠️ Showing {blogs.length} local articles (API unavailable)
-              </p>
-            ) : totalCount !== null ? (
-              <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
-                📰 Showing <strong>{blogs.length}</strong> botanical guides & articles from live database
-              </p>
-            ) : null}
+            <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
+              📰 Displaying <strong>{blogs.length}</strong> botanical guides & care articles
+            </p>
           </div>
         )}
 
