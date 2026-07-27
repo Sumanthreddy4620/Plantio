@@ -446,13 +446,19 @@ const server = http.createServer(async (req, res) => {
       // Determine query search term
       let queryTerm = search.trim();
       if (!queryTerm) {
-        if (category === 'Pest') queryTerm = 'aphid';
-        else if (category === 'Disease') queryTerm = 'mildew';
-        else queryTerm = 'pest';
+        if (category === 'Pest') queryTerm = 'pest insect aphid';
+        else if (category === 'Disease') queryTerm = 'plant disease fungus mildew';
+        else queryTerm = 'plant disease pest aphid';
       }
+
+      // Restrict iconic taxa to Insects, Arachnids, Fungi, Chromista, and Mollusks
+      let iconicTaxa = 'Insecta,Arachnida,Fungi,Chromista,Mollusca';
+      if (category === 'Pest') iconicTaxa = 'Insecta,Arachnida,Mollusca';
+      if (category === 'Disease') iconicTaxa = 'Fungi,Chromista,Plantae';
 
       const inatUrl = `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams({
         q: queryTerm,
+        iconic_taxa: iconicTaxa,
         per_page: perPage,
         page: page,
         locale: 'en',
@@ -467,12 +473,20 @@ const server = http.createServer(async (req, res) => {
 
         if (inatData && Array.isArray(inatData.results)) {
           const mappedDiseases = inatData.results
-            .filter(item => item.preferred_common_name || item.name)
+            .filter(item => {
+              if (!item.preferred_common_name && !item.name) return false;
+              // Strictly exclude birds (Aves), mammals (Mammalia), reptiles, amphibians, and fish
+              const taxon = item.iconic_taxon_name;
+              if (taxon === 'Aves' || taxon === 'Mammalia' || taxon === 'Reptilia' || taxon === 'Amphibia' || taxon === 'Actinopterygii') {
+                return false;
+              }
+              return true;
+            })
             .map(item => {
               const commonName = item.preferred_common_name
                 ? item.preferred_common_name.charAt(0).toUpperCase() + item.preferred_common_name.slice(1)
                 : item.name;
-              const isPest = (item.iconic_taxon_name === 'Insecta' || item.iconic_taxon_name === 'Arachnida' || commonName.toLowerCase().includes('bug') || commonName.toLowerCase().includes('aphid') || commonName.toLowerCase().includes('mite') || commonName.toLowerCase().includes('beetle'));
+              const isPest = (item.iconic_taxon_name === 'Insecta' || item.iconic_taxon_name === 'Arachnida' || item.iconic_taxon_name === 'Mollusca' || commonName.toLowerCase().includes('bug') || commonName.toLowerCase().includes('aphid') || commonName.toLowerCase().includes('mite') || commonName.toLowerCase().includes('beetle') || commonName.toLowerCase().includes('fly'));
               const catLabel = isPest ? 'Pest' : 'Disease';
 
               return {
