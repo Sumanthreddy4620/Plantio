@@ -496,11 +496,13 @@ export default function YourComp() {
                 type="button"
                 className="modal-ask-ai-btn"
                 onClick={() => {
+                  const targetPlant = editingPlant;
+                  setEditingPlant(null);
                   window.dispatchEvent(
                     new CustomEvent("plantio_ai_doctor_ask", {
                       detail: {
-                        prompt: `Give me tailored care, sunlight, and fertilizer advice for my ${editingPlant.title}`,
-                        imageUrl: editingPlant.imgUrl
+                        prompt: `Give me tailored care, sunlight, and fertilizer advice for my ${targetPlant.title}`,
+                        imageUrl: targetPlant.imgUrl
                       }
                     })
                   );
