@@ -2253,11 +2253,6 @@ aside {
   font-family: var(--font);
 }
 
-/* Keeps the chat mounted (so conversation state is preserved) while visually hidden */
-.ai-float-window-closed {
-  display: none;
-}
-
 /* Floating FAB Button */
 .ai-fab-button {
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
@@ -2309,38 +2304,6 @@ aside {
   0% { transform: scale(0.9); opacity: 1; }
   50% { transform: scale(1.4); opacity: 0.5; }
   100% { transform: scale(0.9); opacity: 1; }
-}
-
-/* On small screens, collapse the FAB to a compact icon-only circle so it
-   doesn't crowd or overlap page content */
-@media (max-width: 600px) {
-  .ai-float-widget-container {
-    bottom: 16px;
-    right: 16px;
-  }
-
-  .ai-fab-button {
-    width: 56px;
-    height: 56px;
-    padding: 0;
-    border-radius: 50%;
-    justify-content: center;
-    gap: 0;
-  }
-
-  .fab-badge {
-    display: none;
-  }
-
-  .fab-icon {
-    font-size: 1.5rem;
-  }
-
-  .fab-pulse-dot {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-  }
 }
 
 /* Floating Popover Drawer Window */
