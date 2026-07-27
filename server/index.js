@@ -1097,7 +1097,7 @@ const server = http.createServer(async (req, res) => {
       if (!user) return sendJson(401, { error: 'Unauthorized. Please log in.' });
 
       const body = await getJsonBody(req);
-      const { title, text, imgUrl, wateringFrequency, lastWatered } = body;
+      const { title, text, imgUrl, wateringFrequency, lastWatered, growthJournal } = body;
 
       if (!title || !title.trim()) {
         return sendJson(400, { error: 'Plant title is required.' });
@@ -1109,7 +1109,8 @@ const server = http.createServer(async (req, res) => {
         text: text || '',
         imgUrl: imgUrl || '',
         wateringFrequency: wateringFrequency || 7,
-        lastWatered: lastWatered || new Date().toISOString().split('T')[0]
+        lastWatered: lastWatered || new Date().toISOString().split('T')[0],
+        growthJournal: growthJournal || []
       });
 
       return sendJson(201, { message: 'Plant added successfully!', plant: newPlant });

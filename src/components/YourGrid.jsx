@@ -83,6 +83,12 @@ export default function YourGrid({ entry, onWater, onEdit }) {
         <h3 className="main-name">{entry.title}</h3>
         {entry.text && <p className="main-name-info">{entry.text}</p>}
 
+        {Array.isArray(entry.growthJournal) && entry.growthJournal.length > 0 && (
+          <div className="journal-count-badge" title="Growth progress logs added">
+            📸 {entry.growthJournal.length} {entry.growthJournal.length === 1 ? "Progress Photo" : "Progress Photos"}
+          </div>
+        )}
+
         <div className="your-card-footer">
           <button
             type="button"

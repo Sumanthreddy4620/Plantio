@@ -79,28 +79,39 @@ export const db = {
     };
   },
 
-  // ── Get plants for a user ─────────────────────────────────────────────────
+  // ── Get all plants for user ───────────────────────────────────────────────
   async getUserPlants(userId) {
     const { data, error } = await supabase
       .from('user_plants')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: true });
-    if (error) { console.error('getUserPlants error:', error.message); return []; }
-    return (data || []).map(p => ({
-      id: String(p.id),
-      userId: p.user_id,
-      title: p.title,
-      text: p.text || '',
-      imgUrl: p.img_url || '',
-      wateringFrequency: p.watering_frequency || '7',
-      lastWatered: p.last_watered,
-      createdAt: p.created_at
-    }));
+      .order('created_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data || []).map((row) => {
+      let journal = [];
+      try {
+        if (row.growth_journal) {
+          journal = typeof row.growth_journal === 'string' ? JSON.parse(row.growth_journal) : row.growth_journal;
+        }
+      } catch (e) {}
+
+      return {
+        id: String(row.id),
+        userId: row.user_id,
+        title: row.title,
+        text: row.text || '',
+        imgUrl: row.img_url || '',
+        wateringFrequency: row.watering_frequency || '7',
+        lastWatered: row.last_watered,
+        createdAt: row.created_at,
+        growthJournal: Array.isArray(journal) ? journal : []
+      };
+    });
   },
 
   // ── Create plant ──────────────────────────────────────────────────────────
-  async createPlant({ userId, title, text, imgUrl, wateringFrequency, lastWatered }) {
+  async createPlant({ userId, title, text, imgUrl, wateringFrequency, lastWatered, growthJournal }) {
+    const journalData = Array.isArray(growthJournal) ? JSON.stringify(growthJournal) : (growthJournal || '[]');
     const { data, error } = await supabase
       .from('user_plants')
       .insert({
@@ -109,11 +120,20 @@ export const db = {
         text: text || '',
         img_url: imgUrl || '',
         watering_frequency: String(wateringFrequency || 7),
-        last_watered: lastWatered || new Date().toISOString().split('T')[0]
+        last_watered: lastWatered || new Date().toISOString().split('T')[0],
+        growth_journal: journalData
       })
       .select('*')
       .single();
     if (error) throw new Error(error.message);
+
+    let journal = [];
+    try {
+      if (data.growth_journal) {
+        journal = typeof data.growth_journal === 'string' ? JSON.parse(data.growth_journal) : data.growth_journal;
+      }
+    } catch (e) {}
+
     return {
       id: String(data.id),
       userId: data.user_id,
@@ -122,7 +142,8 @@ export const db = {
       imgUrl: data.img_url || '',
       wateringFrequency: data.watering_frequency || '7',
       lastWatered: data.last_watered,
-      createdAt: data.created_at
+      createdAt: data.created_at,
+      growthJournal: Array.isArray(journal) ? journal : []
     };
   },
 
@@ -152,13 +173,16 @@ export const db = {
   },
 
   // ── Update plant details ──────────────────────────────────────────────────
-  async updatePlant(id, userId, { title, text, imgUrl, wateringFrequency, lastWatered }) {
+  async updatePlant(id, userId, { title, text, imgUrl, wateringFrequency, lastWatered, growthJournal }) {
     const updates = {};
     if (title !== undefined) updates.title = title.trim();
     if (text !== undefined) updates.text = text;
     if (imgUrl !== undefined) updates.img_url = imgUrl;
     if (wateringFrequency !== undefined) updates.watering_frequency = String(wateringFrequency);
     if (lastWatered !== undefined) updates.last_watered = lastWatered;
+    if (growthJournal !== undefined) {
+      updates.growth_journal = Array.isArray(growthJournal) ? JSON.stringify(growthJournal) : growthJournal;
+    }
 
     const { data, error } = await supabase
       .from('user_plants')

@@ -164,6 +164,15 @@ export default function YourComp() {
     imgUrl: "",
     wateringFrequency: "7",
     lastWatered: new Date().toISOString().split("T")[0],
+    growthJournal: []
+  });
+
+  const [showJournalAdd, setShowJournalAdd] = useState(false);
+  const [newJournalEntry, setNewJournalEntry] = useState({
+    date: new Date().toISOString().split("T")[0],
+    stage: "Month 1",
+    note: "",
+    imgUrl: ""
   });
 
   function startEdit(plant) {
@@ -174,7 +183,61 @@ export default function YourComp() {
       imgUrl: plant.imgUrl || "",
       wateringFrequency: String(plant.wateringFrequency || "7"),
       lastWatered: plant.lastWatered || new Date().toISOString().split("T")[0],
+      growthJournal: Array.isArray(plant.growthJournal) ? plant.growthJournal : []
     });
+    setShowJournalAdd(false);
+    setNewJournalEntry({
+      date: new Date().toISOString().split("T")[0],
+      stage: "Month 1",
+      note: "",
+      imgUrl: ""
+    });
+  }
+
+  function handleJournalFileSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Please select an image smaller than 5MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setNewJournalEntry((prev) => ({ ...prev, imgUrl: event.target.result }));
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleAddJournalEntry() {
+    if (!newJournalEntry.imgUrl) {
+      alert("Please select a photo for the growth progress entry.");
+      return;
+    }
+    const entryObj = {
+      id: `gj_${Date.now()}`,
+      date: newJournalEntry.date,
+      stage: newJournalEntry.stage,
+      note: newJournalEntry.note,
+      imgUrl: newJournalEntry.imgUrl
+    };
+    setEditFormData((prev) => ({
+      ...prev,
+      growthJournal: [...(prev.growthJournal || []), entryObj]
+    }));
+    setShowJournalAdd(false);
+    setNewJournalEntry({
+      date: new Date().toISOString().split("T")[0],
+      stage: "Month 1",
+      note: "",
+      imgUrl: ""
+    });
+  }
+
+  function handleDeleteJournalEntry(journalId) {
+    setEditFormData((prev) => ({
+      ...prev,
+      growthJournal: (prev.growthJournal || []).filter((j) => j.id !== journalId)
+    }));
   }
 
   function handleEditChange(e) {
@@ -525,7 +588,138 @@ export default function YourComp() {
               </div>
             </div>
 
-            {/* Quick Actions Row */}
+            {/* 📸 Growth Journal & Progress Photos Section */}
+            <div className="modal-growth-section">
+              <div className="growth-section-header">
+                <div>
+                  <h4 className="growth-section-title">📸 Growth Journal & Progress Photos</h4>
+                  <p className="growth-section-subtitle">Track photo timeline over time (Month 1, Month 3, Month 6)</p>
+                </div>
+                <button
+                  type="button"
+                  className="add-journal-btn"
+                  onClick={() => setShowJournalAdd(!showJournalAdd)}
+                >
+                  {showJournalAdd ? "Cancel Log" : "+ Add Photo Log"}
+                </button>
+              </div>
+
+              {/* Add Progress Entry Subform */}
+              {showJournalAdd && (
+                <div className="journal-add-subform">
+                  <h5 className="subform-title">🌱 Add Progress Photo Entry</h5>
+                  
+                  <div className="modal-schedule-grid">
+                    <div className="modal-field-group">
+                      <label className="modal-field-label">Date</label>
+                      <input
+                        type="date"
+                        value={newJournalEntry.date}
+                        onChange={(e) => setNewJournalEntry((prev) => ({ ...prev, date: e.target.value }))}
+                        className="modal-input"
+                      />
+                    </div>
+
+                    <div className="modal-field-group">
+                      <label className="modal-field-label">Milestone / Stage</label>
+                      <select
+                        value={newJournalEntry.stage}
+                        onChange={(e) => setNewJournalEntry((prev) => ({ ...prev, stage: e.target.value }))}
+                        className="modal-input"
+                      >
+                        <option value="Day 1 (Planted)">🌱 Day 1 (Planted)</option>
+                        <option value="First Sprout">🌿 First Sprout</option>
+                        <option value="Month 1">🪴 Month 1</option>
+                        <option value="Month 3">🌸 Month 3</option>
+                        <option value="Month 6">🌳 Month 6</option>
+                        <option value="Year 1">🎉 Year 1</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <input
+                    type="text"
+                    placeholder="Short note (e.g. New leaf sprouted today!)"
+                    value={newJournalEntry.note}
+                    onChange={(e) => setNewJournalEntry((prev) => ({ ...prev, note: e.target.value }))}
+                    className="modal-input"
+                    style={{ marginTop: "8px" }}
+                  />
+
+                  {/* Photo File Input */}
+                  <div className="journal-photo-input" style={{ marginTop: "8px" }}>
+                    {newJournalEntry.imgUrl ? (
+                      <div className="photo-preview-box">
+                        <img src={newJournalEntry.imgUrl} alt="Progress log" className="photo-preview-img" style={{ maxHeight: "130px" }} />
+                        <button
+                          type="button"
+                          className="remove-photo-btn"
+                          onClick={() => setNewJournalEntry((prev) => ({ ...prev, imgUrl: "" }))}
+                        >
+                          🗑 Remove Photo
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="photo-dropzone" style={{ padding: "10px" }}>
+                        <label htmlFor="journal-file-input" className="photo-upload-label">
+                          <span style={{ fontSize: "1.3rem" }}>📸</span>
+                          <span style={{ fontWeight: 800, fontSize: "0.82rem", color: "var(--primary-dark)" }}>
+                            Select Progress Photo from Device
+                          </span>
+                        </label>
+                        <input
+                          id="journal-file-input"
+                          type="file"
+                          accept="image/*"
+                          style={{ display: "none" }}
+                          onChange={handleJournalFileSelect}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="modal-save-btn"
+                    style={{ height: "38px", fontSize: "0.84rem", marginTop: "10px" }}
+                    onClick={handleAddJournalEntry}
+                  >
+                    💾 Save Progress Entry
+                  </button>
+                </div>
+              )}
+
+              {/* Progress Timeline Grid */}
+              {(editFormData.growthJournal || []).length === 0 ? (
+                <div className="empty-journal-box">
+                  <span style={{ fontSize: "1.3rem" }}>📸</span>
+                  <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600 }}>
+                    No progress photos added yet. Click <strong>"+ Add Photo Log"</strong> above to track growth over time!
+                  </p>
+                </div>
+              ) : (
+                <div className="growth-timeline-grid">
+                  {(editFormData.growthJournal || []).map((log) => (
+                    <div key={log.id} className="timeline-card">
+                      <img src={log.imgUrl} alt={log.stage} className="timeline-img" />
+                      <button
+                        type="button"
+                        className="timeline-delete-btn"
+                        onClick={() => handleDeleteJournalEntry(log.id)}
+                        title="Delete entry"
+                      >
+                        ✕
+                      </button>
+                      <div className="timeline-info">
+                        <span className="timeline-stage-tag">{log.stage}</span>
+                        <span className="timeline-date">{log.date}</span>
+                        {log.note && <p className="timeline-note">{log.note}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="modal-quick-actions">
               <button
                 type="button"
