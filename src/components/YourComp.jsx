@@ -489,12 +489,12 @@ export default function YourComp() {
         return (
           <>
             {/* Header Info & Stats Dashboard */}
-            <div style={{ padding: "24px 24px 0", width: "100%", boxSizing: "border-box", display: "flex", justifyContent: "center" }}>
+            <div className="garden-dashboard-wrapper">
               <div className="garden-dashboard-banner">
                 <div className="garden-stats-group">
-                  <p className="SlidePanel-your" style={{ margin: 0 }}>
+                  <h2 className="garden-dashboard-title">
                     {user.firstName}'s Garden ({entries.length})
-                  </p>
+                  </h2>
                   
                   {entries.length > 0 && (
                     <div className="garden-pills-row">

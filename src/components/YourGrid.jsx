@@ -54,7 +54,7 @@ export default function YourGrid({ entry, onDelete, onWater, onEdit }) {
           alt={entry.title}
           onError={(e) => { e.target.src = PLANT_PLACEHOLDER; }}
         />
-        <div style={{ position: "absolute", top: "10px", right: "10px", display: "flex", gap: "6px", zIndex: 2 }}>
+        <div className="your-card-top-btns">
           {onEdit && (
             <button
               className="your-edit-btn"
@@ -70,9 +70,8 @@ export default function YourGrid({ entry, onDelete, onWater, onEdit }) {
             onClick={onDelete}
             title="Delete plant"
             aria-label="Delete plant"
-            style={{ position: "static" }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
               <line x1="10" y1="11" x2="10" y2="17"></line>
@@ -82,28 +81,29 @@ export default function YourGrid({ entry, onDelete, onWater, onEdit }) {
         </div>
       </div>
 
-      <h3 className="main-name">{entry.title}</h3>
-      {entry.text && <p className="main-name-info">{entry.text}</p>}
+      <div className="your-card-body">
+        <h3 className="main-name">{entry.title}</h3>
+        {entry.text && <p className="main-name-info">{entry.text}</p>}
 
-      {/* Action Row: Watering status badge + AI Doctor shortcut */}
-      <div className="your-card-actions">
-        <div
-          className={`watering-badge ${status.cls}`}
-          onClick={onWater}
-          title="Click to mark as watered today"
-          style={{ cursor: "pointer" }}
-        >
-          {status.label}
+        <div className="your-card-footer">
+          <button
+            type="button"
+            className={`watering-badge-btn ${status.cls}`}
+            onClick={onWater}
+            title="Click to mark as watered today"
+          >
+            {status.label}
+          </button>
+
+          <button
+            type="button"
+            className="ask-ai-card-btn"
+            onClick={handleAskAIDoctor}
+            title={`Ask AI Doctor about ${entry.title}`}
+          >
+            ✨ Ask AI Doctor
+          </button>
         </div>
-
-        <button
-          type="button"
-          className="ask-ai-card-btn"
-          onClick={handleAskAIDoctor}
-          title={`Ask AI Doctor about ${entry.title}`}
-        >
-          ✨ Ask AI Doctor
-        </button>
       </div>
     </div>
   );

@@ -1476,27 +1476,27 @@ aside {
 
 /* ===================== ADD BUTTONS ===================== */
 .Add-btn {
-  bottom: 24px;
-  right: 185px;
+  bottom: 88px;
+  right: 24px;
   position: fixed;
-  width: 54px;
-  height: 54px;
-  border-radius: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   font-size: 1.6rem;
   font-weight: 300;
   background: var(--primary);
   border: none;
   color: white;
   cursor: pointer;
-  box-shadow: 0 8px 26px rgba(4, 191, 148, 0.45);
+  box-shadow: 0 6px 20px rgba(4, 191, 148, 0.45);
   transition: all 0.25s ease;
-  z-index: 9998;
+  z-index: 9990;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.Add-btn:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 14px 34px rgba(4, 191, 148, 0.55); }
+.Add-btn:hover { transform: scale(1.1); box-shadow: 0 10px 28px rgba(4, 191, 148, 0.6); }
 
 .Add-div {
   width: 52px;
@@ -3143,6 +3143,14 @@ aside {
 }
 
 /* ===================== YOUR GARDEN DASHBOARD & CARD ENHANCEMENTS ===================== */
+.garden-dashboard-wrapper {
+  padding: 24px 24px 0;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+}
+
 .garden-dashboard-banner {
   display: flex;
   align-items: center;
@@ -3151,13 +3159,20 @@ aside {
   flex-wrap: wrap;
   background: #ffffff;
   border: 1.5px solid var(--border);
-  padding: 16px 24px;
-  border-radius: 20px;
+  padding: 14px 24px;
+  border-radius: 16px;
   margin-bottom: 24px;
-  box-shadow: 0 4px 20px rgba(4, 191, 148, 0.08);
+  box-shadow: 0 4px 16px rgba(4, 191, 148, 0.06);
   width: 100%;
   max-width: 1160px;
   box-sizing: border-box;
+}
+
+.garden-dashboard-title {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--text);
+  margin: 0;
 }
 
 .garden-stats-group {
@@ -3175,9 +3190,9 @@ aside {
 }
 
 .garden-stat-pill {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 800;
-  padding: 5px 12px;
+  padding: 4px 12px;
   border-radius: 20px;
   display: inline-flex;
   align-items: center;
@@ -3212,10 +3227,10 @@ aside {
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
   color: white;
   border: none;
-  padding: 9px 18px;
+  padding: 8px 16px;
   border-radius: 20px;
   font-weight: 800;
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
   transition: all 0.2s ease;
@@ -3226,21 +3241,74 @@ aside {
   box-shadow: 0 6px 18px rgba(5, 150, 105, 0.5);
 }
 
-.your-card-actions {
+/* Card Structure & Button Stacking */
+.your-entry {
+  font-family: var(--font);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: calc(100% - 20px);
-  margin: auto 10px 0;
-  padding-bottom: 4px;
+  width: 220px;
+  min-height: 320px;
+  height: auto;
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  background: var(--surface);
+  position: relative;
+}
+
+.your-card-top-btns {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  z-index: 5;
+}
+
+.your-card-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
+}
+
+.your-card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  width: 100%;
+}
+
+.watering-badge-btn {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-weight: 800;
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.watering-badge-btn.due { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.watering-badge-btn.ok { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+.watering-badge-btn.soon { background: #fef3c7; color: #92400e; border: 1px solid #fde047; }
+
+.watering-badge-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.97);
 }
 
 .ask-ai-card-btn {
   background: #f0fdf4;
   color: #047857;
   border: 1px solid #a7f3d0;
-  padding: 7px 12px;
-  border-radius: 14px;
+  padding: 7px 10px;
+  border-radius: 10px;
   font-weight: 800;
   font-size: 0.78rem;
   cursor: pointer;
