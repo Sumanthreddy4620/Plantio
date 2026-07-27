@@ -489,7 +489,7 @@ export default function YourComp() {
         return (
           <>
             {/* Header Info & Stats Dashboard */}
-            <div style={{ padding: "24px 24px 0", maxWidth: "1200px", width: "100%" }}>
+            <div style={{ padding: "24px 24px 0", width: "100%", boxSizing: "border-box", display: "flex", justifyContent: "center" }}>
               <div className="garden-dashboard-banner">
                 <div className="garden-stats-group">
                   <p className="SlidePanel-your" style={{ margin: 0 }}>

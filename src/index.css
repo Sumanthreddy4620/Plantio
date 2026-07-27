@@ -952,14 +952,36 @@ aside {
   display: flex;
   flex-direction: column;
   width: 220px;
-  height: 295px;
+  min-height: 330px;
+  height: auto;
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   background: var(--surface);
   position: relative;
+  padding-bottom: 12px;
 }
+
+.watering-badge {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  border-radius: 12px;
+  padding: 6px 10px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.watering-badge.due { background: #fee2e2; color: #991b1b; }
+.watering-badge.ok { background: #d1fae5; color: #065f46; }
+.watering-badge.soon { background: #fef3c7; color: #92400e; }
 
 .your-add-entry {
   font-family: var(--font);
@@ -1454,8 +1476,8 @@ aside {
 
 /* ===================== ADD BUTTONS ===================== */
 .Add-btn {
-  bottom: 30px;
-  right: 30px;
+  bottom: 24px;
+  right: 185px;
   position: fixed;
   width: 54px;
   height: 54px;
@@ -1468,7 +1490,7 @@ aside {
   cursor: pointer;
   box-shadow: 0 8px 26px rgba(4, 191, 148, 0.45);
   transition: all 0.25s ease;
-  z-index: 100;
+  z-index: 9998;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3025,6 +3047,14 @@ aside {
     right: 16px;
   }
 
+  .Add-btn {
+    bottom: 78px;
+    right: 16px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+  }
+
   .ai-fab-button {
     padding: 0;
     width: 52px;
@@ -3125,6 +3155,9 @@ aside {
   border-radius: 20px;
   margin-bottom: 24px;
   box-shadow: 0 4px 20px rgba(4, 191, 148, 0.08);
+  width: 100%;
+  max-width: 1160px;
+  box-sizing: border-box;
 }
 
 .garden-stats-group {
@@ -3197,8 +3230,9 @@ aside {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: 100%;
-  margin-top: 12px;
+  width: calc(100% - 20px);
+  margin: auto 10px 0;
+  padding-bottom: 4px;
 }
 
 .ask-ai-card-btn {
