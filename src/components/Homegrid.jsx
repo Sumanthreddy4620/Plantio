@@ -90,7 +90,7 @@ export default function Homegrid() {
             />
             <h3 className="home-name">300,000+ Plant & Disease Library</h3>
             <p className="home-name-info">
-              Search over 300,000+ verified plant species, step-by-step disease cures, and expert botanical guides curated for your garden.
+              Explore 300,000+ verified plant species, step-by-step disease cures, pest solutions, and expert botanical guides for your garden.
             </p>
             <Link to="/plants" className="card-action-link">
               Explore Botanical Library →
