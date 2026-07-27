@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import YourGrid from "./YourGrid";
+import YourGrid, { getWateringStatus } from "./YourGrid";
 import API_BASE_URL from "../config";
 
 export default function YourComp() {
@@ -372,24 +372,49 @@ export default function YourComp() {
       {/* Modify / Edit Plant Popup Form */}
       {editingPlant && (
         <div className="popup" onClick={(e) => e.target === e.currentTarget && setEditingPlant(null)}>
-          <form onSubmit={handleUpdateSubmit}>
-            <h3>✏️ Modify Plant & Reminder</h3>
+          <form onSubmit={handleUpdateSubmit} className="modal-card-form">
+            {/* Modal Header */}
+            <div className="modal-header-row">
+              <div>
+                <h3 className="modal-title">🌱 Manage Plant Details</h3>
+                <p className="modal-subtitle">Update schedule, notes, or consult AI Doctor</p>
+              </div>
+              <button
+                type="button"
+                className="modal-close-icon"
+                onClick={() => setEditingPlant(null)}
+                title="Close modal"
+              >
+                ✕
+              </button>
+            </div>
 
-            <input
-              name="title"
-              placeholder="Plant name *"
-              value={editFormData.title}
-              onChange={handleEditChange}
-              required
-            />
-            <textarea
-              name="text"
-              placeholder="Description or notes"
-              value={editFormData.text}
-              onChange={handleEditChange}
-            />
+            {/* Field: Plant Name */}
+            <div className="modal-field-group">
+              <label className="modal-field-label">Plant Name *</label>
+              <input
+                name="title"
+                placeholder="e.g. Coriander"
+                value={editFormData.title}
+                onChange={handleEditChange}
+                required
+                className="modal-input"
+              />
+            </div>
 
-            {/* Photo Selection from device gallery or folder */}
+            {/* Field: Notes / Scientific Name */}
+            <div className="modal-field-group">
+              <label className="modal-field-label">Scientific Name or Notes</label>
+              <input
+                name="text"
+                placeholder="e.g. Coriandrum sativum / Keep near sunlight"
+                value={editFormData.text}
+                onChange={handleEditChange}
+                className="modal-input"
+              />
+            </div>
+
+            {/* Photo Selection */}
             <div className="form-photo-picker">
               {editFormData.imgUrl ? (
                 <div className="photo-preview-box">
@@ -399,15 +424,15 @@ export default function YourComp() {
                     className="remove-photo-btn"
                     onClick={() => setEditFormData(prev => ({ ...prev, imgUrl: "" }))}
                   >
-                    🗑 Remove Photo
+                    🗑 Change / Remove Photo
                   </button>
                 </div>
               ) : (
                 <div className="photo-dropzone">
                   <label htmlFor="edit-photo-input" className="photo-upload-label">
-                    <span style={{ fontSize: "1.8rem" }}>📸</span>
-                    <span style={{ fontWeight: 800, fontSize: "0.9rem", color: "var(--primary-dark)" }}>
-                      Change Photo from Gallery
+                    <span style={{ fontSize: "1.6rem" }}>📸</span>
+                    <span style={{ fontWeight: 800, fontSize: "0.86rem", color: "var(--primary-dark)" }}>
+                      Upload Plant Photo
                     </span>
                   </label>
                   <input
@@ -421,79 +446,199 @@ export default function YourComp() {
               )}
             </div>
 
-            <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "-4px" }}>
-              Watering Reminder Frequency:
-            </label>
-            <select
-              name="wateringFrequency"
-              value={editFormData.wateringFrequency}
-              onChange={handleEditChange}
-            >
-              <option value="1">💧 Water every day (1 day)</option>
-              <option value="2">💧 Every 2 days</option>
-              <option value="3">💧 Every 3 days</option>
-              <option value="7">💧 Every week (7 days)</option>
-              <option value="14">💧 Every 2 weeks (14 days)</option>
-              <option value="30">💧 Every month (30 days)</option>
-            </select>
+            {/* 2-Column Schedule Grid */}
+            <div className="modal-schedule-grid">
+              <div className="modal-field-group">
+                <label className="modal-field-label">Watering Frequency</label>
+                <select
+                  name="wateringFrequency"
+                  value={editFormData.wateringFrequency}
+                  onChange={handleEditChange}
+                  className="modal-input"
+                >
+                  <option value="1">💧 Every day (1d)</option>
+                  <option value="2">💧 Every 2 days</option>
+                  <option value="3">💧 Every 3 days</option>
+                  <option value="7">💧 Every week (7d)</option>
+                  <option value="14">💧 Every 2 weeks</option>
+                  <option value="30">💧 Monthly (30d)</option>
+                </select>
+              </div>
 
-            <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "-4px" }}>
-              Last Watered Date:
-            </label>
-            <input
-              name="lastWatered"
-              type="date"
-              value={editFormData.lastWatered}
-              onChange={handleEditChange}
-              title="Last watered date"
-            />
+              <div className="modal-field-group">
+                <label className="modal-field-label">Last Watered Date</label>
+                <input
+                  name="lastWatered"
+                  type="date"
+                  value={editFormData.lastWatered}
+                  onChange={handleEditChange}
+                  className="modal-input"
+                />
+              </div>
+            </div>
 
-            <div className="popup-actions">
-              <button type="submit" className="submit-btn" style={{ background: "var(--primary)" }}>
-                Save Changes
+            {/* Quick Actions Row */}
+            <div className="modal-quick-actions">
+              <button
+                type="button"
+                className="modal-water-btn"
+                onClick={async () => {
+                  const todayStr = new Date().toISOString().split("T")[0];
+                  await handleWater(editingPlant.id);
+                  setEditFormData(prev => ({ ...prev, lastWatered: todayStr }));
+                  setEditingPlant(prev => (prev ? { ...prev, lastWatered: todayStr } : null));
+                }}
+              >
+                💧 Water Plant Now
               </button>
-              <button type="button" className="cancel-btn" onClick={() => setEditingPlant(null)}>
-                Cancel
+
+              <button
+                type="button"
+                className="modal-ask-ai-btn"
+                onClick={() => {
+                  window.dispatchEvent(
+                    new CustomEvent("plantio_ai_doctor_ask", {
+                      detail: {
+                        prompt: `Give me tailored care, sunlight, and fertilizer advice for my ${editingPlant.title}`,
+                        imageUrl: editingPlant.imgUrl
+                      }
+                    })
+                  );
+                }}
+              >
+                ✨ Ask AI Doctor
               </button>
+            </div>
+
+            {/* Primary Submit & Secondary Delete/Cancel */}
+            <div className="modal-footer-actions">
+              <button type="submit" className="modal-save-btn">
+                💾 Save Changes
+              </button>
+
+              <div className="modal-secondary-links">
+                <button
+                  type="button"
+                  className="modal-cancel-link"
+                  onClick={() => setEditingPlant(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="modal-delete-link"
+                  onClick={() => {
+                    if (window.confirm(`Are you sure you want to delete ${editingPlant.title}?`)) {
+                      handleDelete(editingPlant.id);
+                      setEditingPlant(null);
+                    }
+                  }}
+                >
+                  🗑 Delete Plant
+                </button>
+              </div>
             </div>
           </form>
         </div>
       )}
 
-      {/* Header Info */}
-      <div style={{ padding: "24px 24px 0", maxWidth: "1200px", width: "100%" }}>
-        <p className="SlidePanel-your">
-          {user.firstName}'s Plants ({entries.length})
-        </p>
-      </div>
+      {/* Calculate garden health stats */}
+      {(() => {
+        let healthyCount = 0;
+        let dueSoonCount = 0;
+        let overdueCount = 0;
 
-      {loading ? (
-        <div style={{ textAlign: "center", padding: "60px", color: "var(--text-muted)", fontWeight: 700 }}>
-          🔄 Loading your garden from database...
-        </div>
-      ) : error ? (
-        <div style={{ textAlign: "center", padding: "60px", color: "#dc2626", fontWeight: 700 }}>
-          ⚠ {error}
-        </div>
-      ) : (
-        <article className="plant-grid" style={{ padding: "0 24px 48px" }}>
-          {entries.map((entry) => (
-            <YourGrid
-              key={entry.id}
-              entry={entry}
-              onDelete={() => handleDelete(entry.id)}
-              onWater={() => handleWater(entry.id)}
-              onEdit={() => startEdit(entry)}
-            />
-          ))}
+        entries.forEach((entry) => {
+          const status = getWateringStatus(entry.lastWatered, entry.wateringFrequency);
+          if (status.statusType === "overdue") overdueCount++;
+          else if (status.statusType === "soon") dueSoonCount++;
+          else healthyCount++;
+        });
 
-          {/* Add card */}
-          <div className="your-add-entry" onClick={() => setShowForm(true)}>
-            <div className="Add-div" style={{ pointerEvents: "none" }}>+</div>
-            <span>Add a plant</span>
-          </div>
-        </article>
-      )}
+        const totalDue = overdueCount + dueSoonCount;
+
+        const handleWaterAllDue = async () => {
+          const duePlants = entries.filter((e) => {
+            const status = getWateringStatus(e.lastWatered, e.wateringFrequency);
+            return status.statusType === "overdue" || status.statusType === "soon";
+          });
+
+          for (const plant of duePlants) {
+            await handleWater(plant.id);
+          }
+        };
+
+        return (
+          <>
+            {/* Header Info & Stats Dashboard */}
+            <div className="garden-dashboard-wrapper">
+              <div className="garden-dashboard-banner">
+                <div className="garden-stats-group">
+                  <h2 className="garden-dashboard-title">
+                    {user.firstName}'s Garden ({entries.length})
+                  </h2>
+                  
+                  {entries.length > 0 && (
+                    <div className="garden-pills-row">
+                      <span className="garden-stat-pill healthy-pill">
+                        🟢 {healthyCount} Healthy
+                      </span>
+                      {dueSoonCount > 0 && (
+                        <span className="garden-stat-pill soon-pill">
+                          🟡 {dueSoonCount} Water Today
+                        </span>
+                      )}
+                      {overdueCount > 0 && (
+                        <span className="garden-stat-pill overdue-pill">
+                          🔴 {overdueCount} Overdue
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {totalDue > 0 && (
+                  <button
+                    type="button"
+                    className="water-all-btn"
+                    onClick={handleWaterAllDue}
+                    title="Water all due plants in 1 click"
+                  >
+                    💧 Water All Due Plants ({totalDue})
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {loading ? (
+              <div style={{ textAlign: "center", padding: "60px", color: "var(--text-muted)", fontWeight: 700 }}>
+                🔄 Loading your garden from database...
+              </div>
+            ) : error ? (
+              <div style={{ textAlign: "center", padding: "60px", color: "#dc2626", fontWeight: 700 }}>
+                ⚠ {error}
+              </div>
+            ) : (
+              <article className="plant-grid" style={{ padding: "0 24px 48px" }}>
+                {entries.map((entry) => (
+                  <YourGrid
+                    key={entry.id}
+                    entry={entry}
+                    onWater={() => handleWater(entry.id)}
+                    onEdit={() => startEdit(entry)}
+                  />
+                ))}
+
+                {/* Add card */}
+                <div className="your-add-entry" onClick={() => setShowForm(true)}>
+                  <div className="Add-div" style={{ pointerEvents: "none" }}>+</div>
+                  <span>Add a plant</span>
+                </div>
+              </article>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }

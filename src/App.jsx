@@ -16,6 +16,7 @@ import Signup from "./components/Signup";
 import PlantDetail from "./components/PlantDetail";
 import DiseaseDetail from "./components/DiseaseDetail";
 import BlogDetail from "./components/BlogDetail";
+import AIChatModal from "./components/AIChatModal";
 import NotFound from "./components/NotFound";
 
 export default function App() {
@@ -51,6 +52,7 @@ export default function App() {
       </Routes>
 
       {!shouldHideHeader && <Footer />}
+      {!shouldHideHeader && <AIChatModal />}
     </>
   );
 }

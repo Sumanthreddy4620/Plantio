@@ -33,11 +33,11 @@ export const db = {
     if (error) { console.error('findUserByEmail error:', error.message); return null; }
     if (!data) return null;
     return {
-      id:        data.id,
+      id: data.id,
       firstName: data.first_name,
-      lastName:  data.last_name,
-      email:     data.email,
-      password:  data.password
+      lastName: data.last_name,
+      email: data.email,
+      password: data.password
     };
   },
 
@@ -51,10 +51,10 @@ export const db = {
     if (error) { console.error('findUserById error:', error.message); return null; }
     if (!data) return null;
     return {
-      id:        data.id,
+      id: data.id,
       firstName: data.first_name,
-      lastName:  data.last_name,
-      email:     data.email
+      lastName: data.last_name,
+      email: data.email
     };
   },
 
@@ -64,18 +64,18 @@ export const db = {
       .from('users')
       .insert({
         first_name: firstName,
-        last_name:  lastName,
-        email:      email.toLowerCase().trim(),
+        last_name: lastName,
+        email: email.toLowerCase().trim(),
         password
       })
       .select('id, first_name, last_name, email')
       .single();
     if (error) throw new Error(error.message);
     return {
-      id:        data.id,
+      id: data.id,
       firstName: data.first_name,
-      lastName:  data.last_name,
-      email:     data.email
+      lastName: data.last_name,
+      email: data.email
     };
   },
 
@@ -88,14 +88,14 @@ export const db = {
       .order('created_at', { ascending: true });
     if (error) { console.error('getUserPlants error:', error.message); return []; }
     return (data || []).map(p => ({
-      id:                String(p.id),
-      userId:            p.user_id,
-      title:             p.title,
-      text:              p.text || '',
-      imgUrl:            p.img_url || '',
+      id: String(p.id),
+      userId: p.user_id,
+      title: p.title,
+      text: p.text || '',
+      imgUrl: p.img_url || '',
       wateringFrequency: p.watering_frequency || '7',
-      lastWatered:       p.last_watered,
-      createdAt:         p.created_at
+      lastWatered: p.last_watered,
+      createdAt: p.created_at
     }));
   },
 
@@ -104,25 +104,25 @@ export const db = {
     const { data, error } = await supabase
       .from('user_plants')
       .insert({
-        user_id:           userId,
+        user_id: userId,
         title,
-        text:              text || '',
-        img_url:           imgUrl || '',
+        text: text || '',
+        img_url: imgUrl || '',
         watering_frequency: String(wateringFrequency || 7),
-        last_watered:      lastWatered || new Date().toISOString().split('T')[0]
+        last_watered: lastWatered || new Date().toISOString().split('T')[0]
       })
       .select('*')
       .single();
     if (error) throw new Error(error.message);
     return {
-      id:                String(data.id),
-      userId:            data.user_id,
-      title:             data.title,
-      text:              data.text || '',
-      imgUrl:            data.img_url || '',
+      id: String(data.id),
+      userId: data.user_id,
+      title: data.title,
+      text: data.text || '',
+      imgUrl: data.img_url || '',
       wateringFrequency: data.watering_frequency || '7',
-      lastWatered:       data.last_watered,
-      createdAt:         data.created_at
+      lastWatered: data.last_watered,
+      createdAt: data.created_at
     };
   },
 
@@ -154,11 +154,11 @@ export const db = {
   // ── Update plant details ──────────────────────────────────────────────────
   async updatePlant(id, userId, { title, text, imgUrl, wateringFrequency, lastWatered }) {
     const updates = {};
-    if (title             !== undefined) updates.title             = title.trim();
-    if (text              !== undefined) updates.text              = text;
-    if (imgUrl            !== undefined) updates.img_url           = imgUrl;
+    if (title !== undefined) updates.title = title.trim();
+    if (text !== undefined) updates.text = text;
+    if (imgUrl !== undefined) updates.img_url = imgUrl;
     if (wateringFrequency !== undefined) updates.watering_frequency = String(wateringFrequency);
-    if (lastWatered       !== undefined) updates.last_watered      = lastWatered;
+    if (lastWatered !== undefined) updates.last_watered = lastWatered;
 
     const { data, error } = await supabase
       .from('user_plants')
@@ -170,14 +170,14 @@ export const db = {
     if (error) { console.error('updatePlant error:', error.message); return null; }
     if (!data) return null;
     return {
-      id:                String(data.id),
-      userId:            data.user_id,
-      title:             data.title,
-      text:              data.text || '',
-      imgUrl:            data.img_url || '',
+      id: String(data.id),
+      userId: data.user_id,
+      title: data.title,
+      text: data.text || '',
+      imgUrl: data.img_url || '',
       wateringFrequency: data.watering_frequency || '7',
-      lastWatered:       data.last_watered,
-      createdAt:         data.created_at
+      lastWatered: data.last_watered,
+      createdAt: data.created_at
     };
   }
 };

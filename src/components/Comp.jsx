@@ -14,21 +14,24 @@ function useDebounce(value, delay) {
 }
 
 const categories = [
-  "All", "Flowers", "Trees", "Succulents",
-  "Cactuses", "Shrubs", "Ferns", "Herbs", "Grasses", "Aquatics"
+  "All", "Cactuses", "Succulents", "Flowers",
+  "Trees", "Grasses", "Shrubs", "Ferns",
+  "Herbs", "Aquatics", "Mushrooms", "Weeds",
 ];
 
-// Map our UI categories → search terms
+// Map our UI categories → Perenual search terms
 const CATEGORY_SEARCH_MAP = {
+  "Cactuses": "cactus",
+  "Succulents": "succulent",
   "Flowers": "flower",
   "Trees": "tree",
-  "Succulents": "succulent",
-  "Cactuses": "cactus",
+  "Grasses": "grass",
   "Shrubs": "shrub",
   "Ferns": "fern",
   "Herbs": "herb",
-  "Grasses": "grass",
   "Aquatics": "aquatic",
+  "Mushrooms": "mushroom",
+  "Weeds": "weed",
 };
 
 export default function Comp({ searchText }) {
@@ -168,25 +171,25 @@ export default function Comp({ searchText }) {
         <article className="plant-grid">
           {loading
             ? Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="plant-skeleton" aria-hidden="true" />
-            ))
+                <div key={i} className="plant-skeleton" aria-hidden="true" />
+              ))
             : entryElements.length === 0
-              ? (
-                <div className="empty-state">
-                  <span className="empty-emoji">🌵</span>
-                  <h3>No plants found</h3>
-                  <p>Try a different search term or browse another category.</p>
-                </div>
-              )
-              : entryElements
+            ? (
+              <div className="empty-state">
+                <span className="empty-emoji">🌵</span>
+                <h3>No plants found</h3>
+                <p>Try a different search term or browse another category.</p>
+              </div>
+            )
+            : entryElements
           }
         </article>
 
         {/* Load More Button */}
-        {!loading && !usingFallback && hasMore && (
+        {!loading && hasMore && (
           <div style={{ textAlign: "center", margin: "24px 0 12px" }}>
             <button
-              onClick={handleLoadMore}
+              onClick={() => setPage((p) => p + 1)}
               disabled={loadingMore}
               className="load-more-btn"
             >
