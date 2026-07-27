@@ -446,24 +446,23 @@ const server = http.createServer(async (req, res) => {
       // Determine query search term
       let queryTerm = search.trim();
       if (!queryTerm) {
-        if (category === 'Pest') queryTerm = 'pest insect aphid';
-        else if (category === 'Disease') queryTerm = 'plant disease fungus mildew';
-        else queryTerm = 'plant disease pest aphid';
+        if (category === 'Pest') queryTerm = 'aphid';
+        else if (category === 'Disease') queryTerm = 'mildew';
+        else queryTerm = 'pest';
       }
 
-      // Restrict iconic taxa to Insects, Arachnids, Fungi, Chromista, and Mollusks
-      let iconicTaxa = 'Insecta,Arachnida,Fungi,Chromista,Mollusca';
-      if (category === 'Pest') iconicTaxa = 'Insecta,Arachnida,Mollusca';
-      if (category === 'Disease') iconicTaxa = 'Fungi,Chromista,Plantae';
-
-      const inatUrl = `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams({
+      const searchParams = {
         q: queryTerm,
-        iconic_taxa: iconicTaxa,
         per_page: perPage,
         page: page,
         locale: 'en',
         preferred_place_id: 1
-      });
+      };
+
+      if (category === 'Pest') searchParams.iconic_taxa = 'Insecta';
+      if (category === 'Disease') searchParams.iconic_taxa = 'Fungi';
+
+      const inatUrl = `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams(searchParams);
 
       try {
         const inatRes = await fetch(inatUrl, {
