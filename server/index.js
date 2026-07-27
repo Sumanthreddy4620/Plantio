@@ -292,6 +292,7 @@ const server = http.createServer(async (req, res) => {
 
   try {
     // ── 0a. iNaturalist PLANT CATALOG PROXY (list + search) ──
+    // ── 0a. iNaturalist PLANT CATALOG PROXY (list + search) ──
     // No API key required. Rate limit: 100 req/min (not per day).
     if (pathname === '/api/external-plants' && req.method === 'GET') {
       const page = Number(url.searchParams.get('page') || '1');
@@ -299,16 +300,38 @@ const server = http.createServer(async (req, res) => {
       const categoryParam = url.searchParams.get('category') || 'All';
       const perPage = 30;
 
-      // iNaturalist taxa endpoint — filter to Plantae kingdom (id 47126)
-      const inatUrl = `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams({
-        q: search || 'plant',
+      const categorySearchMap = {
+        'Cactuses': 'cactus',
+        'Succulents': 'succulent',
+        'Flowers': 'flower',
+        'Trees': 'tree',
+        'Grasses': 'grass',
+        'Shrubs': 'shrub',
+        'Ferns': 'fern',
+        'Herbs': 'herb',
+        'Aquatics': 'aquatic plant',
+        'Mushrooms': 'mushroom',
+        'Weeds': 'weed'
+      };
+
+      let queryTerm = search.trim();
+      if (!queryTerm && categoryParam && categoryParam !== 'All') {
+        queryTerm = categorySearchMap[categoryParam] || 'plant';
+      }
+      if (!queryTerm) queryTerm = 'plant';
+
+      // iNaturalist taxa endpoint — filter strictly to Plantae kingdom (or Fungi for mushrooms)
+      const inatParams = {
+        q: queryTerm,
         rank: 'species',
-        iconic_taxa: 'Plantae',
+        iconic_taxa: categoryParam === 'Mushrooms' ? 'Fungi' : 'Plantae',
         per_page: perPage,
         page: page,
         locale: 'en',
         preferred_place_id: 1 // worldwide
-      });
+      };
+
+      const inatUrl = `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams(inatParams);
 
       try {
         const inatRes = await fetch(inatUrl, {
@@ -318,7 +341,15 @@ const server = http.createServer(async (req, res) => {
 
         if (inatData && Array.isArray(inatData.results)) {
           const mappedPlants = inatData.results
-            .filter(item => item.preferred_common_name) // only include plants with common names
+            .filter(item => {
+              if (!item.preferred_common_name) return false;
+              // Strictly exclude birds (Aves), insects (Insecta), mammals (Mammalia), and non-plant species
+              const taxonName = item.iconic_taxon_name;
+              if (categoryParam === 'Mushrooms') {
+                return taxonName === 'Fungi' || taxonName === 'Plantae';
+              }
+              return taxonName === 'Plantae';
+            })
             .map(item => {
               const care = getPlantCareDetails(item);
               return {
