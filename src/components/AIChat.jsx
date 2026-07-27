@@ -3,14 +3,23 @@ import { Link, useNavigate } from "react-router-dom";
 import API_BASE_URL from "../config";
 
 export default function AIChat({ isEmbedded = false }) {
-  const [messages, setMessages] = useState([
-    {
-      id: "msg_welcome",
-      sender: "ai",
-      text: "Hello! I am your **Plantio AI Doctor & Botanical Assistant** 🌿✨\n\nSend me a text query, paste an image URL, or upload a photo of your plant/leaf to instantly identify species, diagnose diseases, or get tailored care advice!",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("plantio_ai_chat_history");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [
+      {
+        id: "msg_welcome",
+        sender: "ai",
+        text: "Hello! I am your **Plantio AI Doctor & Botanical Assistant** 🌿✨\n\nSend me a text query, paste an image URL, or upload a photo of your plant/leaf to instantly identify species, diagnose diseases, or get tailored care advice!",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ];
+  });
   const [inputPrompt, setInputPrompt] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [showUrlInput, setShowUrlInput] = useState(false);
@@ -24,6 +33,9 @@ export default function AIChat({ isEmbedded = false }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    try {
+      sessionStorage.setItem("plantio_ai_chat_history", JSON.stringify(messages));
+    } catch (e) {}
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 

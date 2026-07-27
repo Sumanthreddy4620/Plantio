@@ -3,7 +3,16 @@ import AIChat from "./AIChat";
 
 export default function AIChatModal() {
   const [isOpen, setIsOpen] = useState(false);
+  const [hasOpenedOnce, setHasOpenedOnce] = useState(false);
   const containerRef = useRef(null);
+
+  const toggleOpen = () => {
+    setIsOpen((prev) => {
+      const next = !prev;
+      if (next) setHasOpenedOnce(true);
+      return next;
+    });
+  };
 
   // Close the widget whenever the user clicks/taps anywhere outside of it
   useEffect(() => {
@@ -25,9 +34,10 @@ export default function AIChatModal() {
 
   return (
     <div className="ai-float-widget-container" ref={containerRef}>
-      {/* Floating Drawer Chat Window */}
-      {isOpen && (
-        <div className="ai-float-window">
+      {/* Floating Drawer Chat Window — stays mounted once opened so the conversation
+          isn't lost when the user closes and reopens it; visibility is toggled via CSS. */}
+      {hasOpenedOnce && (
+        <div className={`ai-float-window ${isOpen ? "" : "ai-float-window-closed"}`}>
           <div className="ai-float-header">
             <div className="ai-float-title">
               <span className="ai-status-pulse"></span>
@@ -48,7 +58,7 @@ export default function AIChatModal() {
 
       {/* Floating Action Button (FAB) */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleOpen}
         className={`ai-fab-button ${isOpen ? "open" : ""}`}
         aria-label="Toggle AI Plant Doctor Chat"
         title="Open AI Plant Doctor Chat"
