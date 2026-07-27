@@ -1,30 +1,43 @@
 import { Link } from "react-router-dom";
 
 export default function Homegrid() {
+  const handleOpenAIDoctor = () => {
+    window.dispatchEvent(
+      new CustomEvent("plantio_ai_doctor_ask", {
+        detail: { prompt: "Hello AI Doctor! Help me identify my plant and check for any diseases." }
+      })
+    );
+  };
+
   return (
     <main className="home-grid">
       <div className="home-second-frame1">
         
-        {/* Frame 1: Light Analysis */}
+        {/* Frame 1: AI Doctor & Instant Disease Scan */}
         <div className="frame1">
           <div className="feature-card-wrapper light-meter-card">
-            <div className="card-badge">☀️ Light Analysis</div>
+            <div className="card-badge">🤖 AI Vision Scanner</div>
             <img 
               className="home-image1"
-              src="https://getplanta.com/_app/immutable/assets/light_meter.BwXMOkkv.avif"
-              alt="Light Meter feature"
+              src="https://getplanta.com/_app/immutable/assets/plant_identification.D4UFhiuT.avif"
+              alt="AI Doctor & Disease identification"
             />
-            <h3 className="home-name">Sunlight & Exposure Guide</h3>
+            <h3 className="home-name">AI Doctor & Instant Scanner</h3>
             <p className="home-name-info">
-              Unsure if a plant belongs in indirect light or full sun? Discover exact lighting requirements for over 300,000+ species.
+              Upload or snap a photo of any leaf to instantly identify 740+ plant diseases, pests, and get tailored organic treatments!
             </p>
-            <Link to="/plants" className="card-action-link">
-              Explore Light Needs →
-            </Link>
+            <button
+              type="button"
+              className="card-action-link"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+              onClick={handleOpenAIDoctor}
+            >
+              Diagnose with AI Doctor →
+            </button>
           </div>
         </div>
 
-        {/* Frame 2: Intelligent Watering */}
+        {/* Frame 2: Intelligent Water Tracker */}
         <div className="frame2">
           <div className="feature-card-wrapper watering-card">
             <div className="card-badge dark-badge">💧 Smart Schedule</div>
@@ -35,10 +48,10 @@ export default function Homegrid() {
             />
             <h3 className="home-name" style={{ color: "#e0ffc2" }}>Intelligent Water Tracker</h3>
             <p className="home-name-info" style={{ color: "rgba(224, 255, 194, 0.88)" }}>
-              Keep your plants hydrated with one-click watering logs, custom frequency intervals, and cloud-synced Garden records.
+              Keep your plants hydrated with automated daily, weekly, or custom care intervals, 1-click batch watering, and health badges.
             </p>
             <Link to="/your-plants" className="card-action-link light-link">
-              Set Up Tracker →
+              Open Water Tracker →
             </Link>
           </div>
         </div> 
@@ -47,40 +60,40 @@ export default function Homegrid() {
 
       <div className="home-second-frame2">
         
-        {/* Frame 3: Garden Journal */}
+        {/* Frame 3: Growth Journal & Progress Photos */}
         <div className="frame3">
           <div className="feature-card-wrapper journal-card">
-            <div className="card-badge">📓 Garden Journal</div>
+            <div className="card-badge">📸 Photo Timeline</div>
             <img 
               className="home-image2"
               src="https://getplanta.com/_app/immutable/assets/plant_organization.CSuB463u.avif"
-              alt="Plant organization & journal"
+              alt="Plant Growth Journal & Progress Photos"
             />
-            <h3 className="home-name">Personal Garden Manager</h3>
+            <h3 className="home-name">Plant Growth Journal & Photos</h3>
             <p className="home-name-info">
-              Manage your green collection across devices. Sync added plants live between your mobile phone and laptop.
+              Track your plant's growth over time! Save dated progress photo logs (Month 1, Month 3, Month 6) and milestones in your cloud garden.
             </p>
             <Link to="/your-plants" className="card-action-link">
-              View Your Garden →
+              Track Growth Journey →
             </Link>
           </div>
         </div>
 
-        {/* Frame 4: Disease & Pest Identification */}
+        {/* Frame 4: Botanical Library */}
         <div className="frame4">
           <div className="feature-card-wrapper disease-card">
-            <div className="card-badge">🦠 Health & Fixes</div>
+            <div className="card-badge">🌿 Botanical Library</div>
             <img 
               className="home-image1"
-              src="https://getplanta.com/_app/immutable/assets/plant_identification.D4UFhiuT.avif"
-              alt="Plant Health & Disease identification"
+              src="https://getplanta.com/_app/immutable/assets/light_meter.BwXMOkkv.avif"
+              alt="300,000+ Plant & Disease Library"
             />
-            <h3 className="home-name">740+ Disease & Pest Solutions</h3>
+            <h3 className="home-name">300,000+ Plant & Disease Library</h3>
             <p className="home-name-info">
-              Yellow leaves or strange spots? Search fungal diseases, root rot, aphids, and mites with step-by-step organic remedies.
+              Search over 300,000+ verified plant species, step-by-step disease cures, and expert botanical guides curated for your garden.
             </p>
-            <Link to="/diseases" className="card-action-link">
-              Diagnose Problems →
+            <Link to="/plants" className="card-action-link">
+              Explore Botanical Library →
             </Link>
           </div>
         </div> 
