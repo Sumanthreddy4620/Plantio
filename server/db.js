@@ -21,6 +21,52 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 
 console.log('✅ Supabase client ready');
 
+function extractPlantData(row) {
+  if (!row) return null;
+  let journal = [];
+  let cleanText = row.text || '';
+
+  // 1. Try growth_journal column
+  if (row.growth_journal) {
+    try {
+      journal = typeof row.growth_journal === 'string' ? JSON.parse(row.growth_journal) : row.growth_journal;
+    } catch (e) {}
+  }
+
+  // 2. Try embedded __GJ__: tag in text
+  if ((!journal || journal.length === 0) && cleanText.includes('__GJ__:')) {
+    try {
+      const parts = cleanText.split('__GJ__:');
+      cleanText = parts[0];
+      const jsonStr = parts[1];
+      if (jsonStr) journal = JSON.parse(jsonStr);
+    } catch (e) {}
+  }
+
+  return {
+    id: String(row.id),
+    userId: row.user_id,
+    title: row.title,
+    text: cleanText,
+    imgUrl: row.img_url || '',
+    wateringFrequency: row.watering_frequency || '7',
+    lastWatered: row.last_watered,
+    createdAt: row.created_at,
+    growthJournal: Array.isArray(journal) ? journal : []
+  };
+}
+
+function packPlantText(text, growthJournal) {
+  let cleanText = text || '';
+  if (cleanText.includes('__GJ__:')) {
+    cleanText = cleanText.split('__GJ__:')[0];
+  }
+  if (Array.isArray(growthJournal) && growthJournal.length > 0) {
+    return `${cleanText}__GJ__:${JSON.stringify(growthJournal)}`;
+  }
+  return cleanText;
+}
+
 export const db = {
 
   // ── Find user by email ────────────────────────────────────────────────────
