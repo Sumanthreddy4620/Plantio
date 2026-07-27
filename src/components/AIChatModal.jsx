@@ -14,6 +14,16 @@ export default function AIChatModal() {
     });
   };
 
+  // Listen for Ask AI Doctor custom events from plant cards
+  useEffect(() => {
+    const handleAskEvent = () => {
+      setHasOpenedOnce(true);
+      setIsOpen(true);
+    };
+    window.addEventListener("plantio_ai_doctor_ask", handleAskEvent);
+    return () => window.removeEventListener("plantio_ai_doctor_ask", handleAskEvent);
+  }, []);
+
   // Close the widget whenever the user clicks/taps anywhere outside of it
   useEffect(() => {
     if (!isOpen) return;

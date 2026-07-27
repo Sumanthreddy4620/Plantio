@@ -14,7 +14,7 @@ export default function YourPlant() {
           <h3>Keep Track on your plants</h3>
 
           <p>
-            Manage all your plants by tracking watering, growth, and care<br/> reminders.A simple way to keep your plants healthy and growing strong.
+            Manage all your plants by tracking watering, growth, and care reminders.<br />A simple way to keep your plants healthy and growing strong.
           </p>
 
         </div>

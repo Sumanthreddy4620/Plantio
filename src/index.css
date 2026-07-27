@@ -3111,3 +3111,113 @@ aside {
     border-radius: 20px;
   }
 }
+
+/* ===================== YOUR GARDEN DASHBOARD & CARD ENHANCEMENTS ===================== */
+.garden-dashboard-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: #ffffff;
+  border: 1.5px solid var(--border);
+  padding: 16px 24px;
+  border-radius: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(4, 191, 148, 0.08);
+}
+
+.garden-stats-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.garden-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.garden-stat-pill {
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 5px 12px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.healthy-pill {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.soon-pill {
+  background: #fefce8;
+  color: #a16207;
+  border: 1px solid #fde047;
+}
+
+.overdue-pill {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+}
+
+.water-all-btn {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: white;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 0.84rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+  transition: all 0.2s ease;
+}
+
+.water-all-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.5);
+}
+
+.your-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.ask-ai-card-btn {
+  background: #f0fdf4;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  padding: 7px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  width: 100%;
+}
+
+.ask-ai-card-btn:hover {
+  background: #10b981;
+  color: white;
+  border-color: #059669;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}

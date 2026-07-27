@@ -39,6 +39,18 @@ export default function AIChat({ isEmbedded = false }) {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  // Listen for plant card Ask AI Doctor shortcuts
+  useEffect(() => {
+    const handleAskEvent = (e) => {
+      if (e.detail) {
+        if (e.detail.prompt) setInputPrompt(e.detail.prompt);
+        if (e.detail.imageUrl) setImageUrl(e.detail.imageUrl);
+      }
+    };
+    window.addEventListener("plantio_ai_doctor_ask", handleAskEvent);
+    return () => window.removeEventListener("plantio_ai_doctor_ask", handleAskEvent);
+  }, []);
+
   const handleToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);

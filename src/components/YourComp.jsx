@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import YourGrid from "./YourGrid";
+import YourGrid, { getWateringStatus } from "./YourGrid";
 import API_BASE_URL from "../config";
 
 export default function YourComp() {
@@ -460,40 +460,104 @@ export default function YourComp() {
         </div>
       )}
 
-      {/* Header Info */}
-      <div style={{ padding: "24px 24px 0", maxWidth: "1200px", width: "100%" }}>
-        <p className="SlidePanel-your">
-          {user.firstName}'s Plants ({entries.length})
-        </p>
-      </div>
+      {/* Calculate garden health stats */}
+      {(() => {
+        let healthyCount = 0;
+        let dueSoonCount = 0;
+        let overdueCount = 0;
 
-      {loading ? (
-        <div style={{ textAlign: "center", padding: "60px", color: "var(--text-muted)", fontWeight: 700 }}>
-          🔄 Loading your garden from database...
-        </div>
-      ) : error ? (
-        <div style={{ textAlign: "center", padding: "60px", color: "#dc2626", fontWeight: 700 }}>
-          ⚠ {error}
-        </div>
-      ) : (
-        <article className="plant-grid" style={{ padding: "0 24px 48px" }}>
-          {entries.map((entry) => (
-            <YourGrid
-              key={entry.id}
-              entry={entry}
-              onDelete={() => handleDelete(entry.id)}
-              onWater={() => handleWater(entry.id)}
-              onEdit={() => startEdit(entry)}
-            />
-          ))}
+        entries.forEach((entry) => {
+          const status = getWateringStatus(entry.lastWatered, entry.wateringFrequency);
+          if (status.statusType === "overdue") overdueCount++;
+          else if (status.statusType === "soon") dueSoonCount++;
+          else healthyCount++;
+        });
 
-          {/* Add card */}
-          <div className="your-add-entry" onClick={() => setShowForm(true)}>
-            <div className="Add-div" style={{ pointerEvents: "none" }}>+</div>
-            <span>Add a plant</span>
-          </div>
-        </article>
-      )}
+        const totalDue = overdueCount + dueSoonCount;
+
+        const handleWaterAllDue = async () => {
+          const duePlants = entries.filter((e) => {
+            const status = getWateringStatus(e.lastWatered, e.wateringFrequency);
+            return status.statusType === "overdue" || status.statusType === "soon";
+          });
+
+          for (const plant of duePlants) {
+            await handleWater(plant.id);
+          }
+        };
+
+        return (
+          <>
+            {/* Header Info & Stats Dashboard */}
+            <div style={{ padding: "24px 24px 0", maxWidth: "1200px", width: "100%" }}>
+              <div className="garden-dashboard-banner">
+                <div className="garden-stats-group">
+                  <p className="SlidePanel-your" style={{ margin: 0 }}>
+                    {user.firstName}'s Garden ({entries.length})
+                  </p>
+                  
+                  {entries.length > 0 && (
+                    <div className="garden-pills-row">
+                      <span className="garden-stat-pill healthy-pill">
+                        🟢 {healthyCount} Healthy
+                      </span>
+                      {dueSoonCount > 0 && (
+                        <span className="garden-stat-pill soon-pill">
+                          🟡 {dueSoonCount} Water Today
+                        </span>
+                      )}
+                      {overdueCount > 0 && (
+                        <span className="garden-stat-pill overdue-pill">
+                          🔴 {overdueCount} Overdue
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {totalDue > 0 && (
+                  <button
+                    type="button"
+                    className="water-all-btn"
+                    onClick={handleWaterAllDue}
+                    title="Water all due plants in 1 click"
+                  >
+                    💧 Water All Due Plants ({totalDue})
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {loading ? (
+              <div style={{ textAlign: "center", padding: "60px", color: "var(--text-muted)", fontWeight: 700 }}>
+                🔄 Loading your garden from database...
+              </div>
+            ) : error ? (
+              <div style={{ textAlign: "center", padding: "60px", color: "#dc2626", fontWeight: 700 }}>
+                ⚠ {error}
+              </div>
+            ) : (
+              <article className="plant-grid" style={{ padding: "0 24px 48px" }}>
+                {entries.map((entry) => (
+                  <YourGrid
+                    key={entry.id}
+                    entry={entry}
+                    onDelete={() => handleDelete(entry.id)}
+                    onWater={() => handleWater(entry.id)}
+                    onEdit={() => startEdit(entry)}
+                  />
+                ))}
+
+                {/* Add card */}
+                <div className="your-add-entry" onClick={() => setShowForm(true)}>
+                  <div className="Add-div" style={{ pointerEvents: "none" }}>+</div>
+                  <span>Add a plant</span>
+                </div>
+              </article>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }

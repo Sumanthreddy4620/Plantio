@@ -1,20 +1,49 @@
 const PLANT_PLACEHOLDER =
   "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80";
 
-function getWateringStatus(lastWatered, frequencyDays) {
+export function getWateringStatus(lastWatered, frequencyDays) {
   const last = new Date(lastWatered);
   const today = new Date();
   const daysSince = Math.floor((today - last) / (1000 * 60 * 60 * 24));
   const freq = parseInt(frequencyDays, 10) || 7;
+  const diff = freq - daysSince;
 
-  if (daysSince >= freq) return { label: "💧 Water now!", cls: "due" };
-  if (daysSince >= freq - 1) return { label: "💧 Water soon", cls: "soon" };
-  return { label: `✅ ${freq - daysSince}d left`, cls: "ok" };
+  if (diff < 0) {
+    const overDays = Math.abs(diff);
+    return {
+      label: `🔴 Overdue by ${overDays}d (Water now!)`,
+      cls: "due",
+      statusType: "overdue"
+    };
+  }
+  if (diff === 0 || diff === 1) {
+    return {
+      label: "🟡 Water Today",
+      cls: "soon",
+      statusType: "soon"
+    };
+  }
+  return {
+    label: `🟢 Watered (${diff}d left)`,
+    cls: "ok",
+    statusType: "ok"
+  };
 }
 
 export default function YourGrid({ entry, onDelete, onWater, onEdit }) {
   const imgSrc = entry.imgUrl || PLANT_PLACEHOLDER;
   const status = getWateringStatus(entry.lastWatered, entry.wateringFrequency);
+
+  const handleAskAIDoctor = () => {
+    window.dispatchEvent(
+      new CustomEvent("plantio_ai_doctor_ask", {
+        detail: {
+          prompt: `Give me tailored care, sunlight, and fertilizer advice for my ${entry.title}`,
+          imageUrl: entry.imgUrl
+        }
+      })
+    );
+  };
 
   return (
     <div className="your-entry">
@@ -56,14 +85,25 @@ export default function YourGrid({ entry, onDelete, onWater, onEdit }) {
       <h3 className="main-name">{entry.title}</h3>
       {entry.text && <p className="main-name-info">{entry.text}</p>}
 
-      {/* Watering badge */}
-      <div
-        className={`watering-badge ${status.cls}`}
-        onClick={onWater}
-        title="Click to mark as watered today"
-        style={{ cursor: "pointer" }}
-      >
-        {status.label}
+      {/* Action Row: Watering status badge + AI Doctor shortcut */}
+      <div className="your-card-actions">
+        <div
+          className={`watering-badge ${status.cls}`}
+          onClick={onWater}
+          title="Click to mark as watered today"
+          style={{ cursor: "pointer" }}
+        >
+          {status.label}
+        </div>
+
+        <button
+          type="button"
+          className="ask-ai-card-btn"
+          onClick={handleAskAIDoctor}
+          title={`Ask AI Doctor about ${entry.title}`}
+        >
+          ✨ Ask AI Doctor
+        </button>
       </div>
     </div>
   );
