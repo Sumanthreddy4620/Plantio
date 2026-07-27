@@ -905,21 +905,22 @@ aside {
   font-weight: 700;
 }
 
-/* ===================== CARDS ===================== */
+/* ===================== CARDS & GRID ===================== */
 .plant-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
   flex: 1;
+  width: 100%;
+  box-sizing: border-box;
   align-content: flex-start;
-  padding-right: 8px;
 }
 
 .plant-entry {
   font-family: var(--font);
   display: flex;
   flex-direction: column;
-  width: 220px;
+  width: 100%;
   height: 295px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
@@ -929,13 +930,14 @@ aside {
   cursor: pointer;
   text-decoration: none;
   color: inherit;
+  box-sizing: border-box;
 }
 
 .Blog-entry {
   font-family: var(--font);
   display: flex;
   flex-direction: column;
-  width: 220px;
+  width: 100%;
   height: 335px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
@@ -945,13 +947,14 @@ aside {
   cursor: pointer;
   text-decoration: none;
   color: inherit;
+  box-sizing: border-box;
 }
 
 .your-entry {
   font-family: var(--font);
   display: flex;
   flex-direction: column;
-  width: 220px;
+  width: 100%;
   min-height: 330px;
   height: auto;
   border: 1.5px solid var(--border);
@@ -961,6 +964,7 @@ aside {
   background: var(--surface);
   position: relative;
   padding-bottom: 12px;
+  box-sizing: border-box;
 }
 
 .watering-badge {
@@ -987,7 +991,7 @@ aside {
   font-family: var(--font);
   display: flex;
   flex-direction: column;
-  width: 220px;
+  width: 100%;
   min-height: 320px;
   height: auto;
   border: 2px dashed #a7f3d0;
@@ -3788,4 +3792,22 @@ aside {
   margin-top: 4px;
   display: inline-block;
   width: fit-content;
+}
+
+/* ===================== MOBILE RESPONSIVE GRID FIX ===================== */
+@media (max-width: 768px) {
+  .plant-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    padding: 0 16px 40px !important;
+  }
+
+  .plant-entry,
+  .Blog-entry,
+  .your-entry,
+  .your-add-entry {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
 }
