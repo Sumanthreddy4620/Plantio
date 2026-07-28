@@ -184,3 +184,4 @@ export default function Comp({ searchText }) {
     </aside>
   );
 }
+ 

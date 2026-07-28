@@ -219,3 +219,4 @@ export default [
     img: "https://cdn.shopify.com/s/files/1/0554/8077/8821/files/1_8ad8f470-654b-417a-b354-6b1de45b9377_600x600.jpg?v=1648194449"
   }
 ];
+ 

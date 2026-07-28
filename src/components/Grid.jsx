@@ -38,3 +38,4 @@ export default function Grid({ img, title, text, id, category, detailPath }) {
 
   return <div className="plant-entry">{inner}</div>;
 }
+ 

@@ -478,3 +478,4 @@ export default function AIChat({ isEmbedded = false }) {
     </div>
   );
 }
+ 

@@ -36,3 +36,4 @@ export default function BlogGrid({ img, title, text, id }) {
 
   return <div className="Blog-entry">{inner}</div>;
 }
+ 

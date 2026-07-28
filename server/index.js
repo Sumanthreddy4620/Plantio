@@ -1134,3 +1134,4 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`🚀 Plantio Database REST API Server running on http://localhost:${PORT}`);
 });
+ 

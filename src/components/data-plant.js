@@ -1107,3 +1107,4 @@ const dataPlant = [
 ];
 
 export default dataPlant;
+ 

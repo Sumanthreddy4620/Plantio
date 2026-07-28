@@ -210,3 +210,4 @@ export default [
     prevention: "Till soil in fall and spring to destroy eggs. Maintain garden hygiene. Use floating row covers on vulnerable plants. Plant border plants that repel grasshoppers like calendula."
   },
 ]
+ 

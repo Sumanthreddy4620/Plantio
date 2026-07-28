@@ -35,3 +35,4 @@ create index if not exists idx_user_plants_user_id on public.user_plants (user_i
 -- The server never exposes the service role key to the browser, so this is safe.
 alter table public.users      disable row level security;
 alter table public.user_plants disable row level security;
+ 
