@@ -271,6 +271,76 @@ const server = http.createServer(async (req, res) => {
   };
 
   try {
+    if (pathname === '/api/plant-of-the-day' && req.method === 'GET') {
+      const now = new Date();
+      const dateSeed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+
+      const plantTerms = [
+        'rose', 'monstera', 'sunflower', 'orchid', 'succulent', 'fern', 'cactus',
+        'tulip', 'lavender', 'pothos', 'aloe', 'bamboo', 'maple', 'bonsai',
+        'hibiscus', 'hydrangea', 'jasmine', 'dahlia', 'lily', 'peony',
+        'ficus', 'philodendron', 'calathea', 'begonia', 'azalea', 'camellia',
+        'magnolia', 'plumeria', 'bougainvillea', 'passionflower'
+      ];
+
+      const termIndex = dateSeed % plantTerms.length;
+      const page = (Math.floor(dateSeed / plantTerms.length) % 3) + 1;
+      const searchTerm = plantTerms[termIndex];
+
+      const inatParams = {
+        q: searchTerm,
+        rank: 'species',
+        iconic_taxa: 'Plantae',
+        per_page: 20,
+        page: page,
+        locale: 'en',
+        preferred_place_id: 1
+      };
+
+      const inatUrl = `https://api.inaturalist.org/v1/taxa?` + new URLSearchParams(inatParams);
+
+      try {
+        const inatRes = await fetch(inatUrl, {
+          headers: { 'Accept': 'application/json', 'User-Agent': 'Plantio/1.0' }
+        });
+        const inatData = await inatRes.json();
+
+        if (inatData && Array.isArray(inatData.results) && inatData.results.length > 0) {
+          const validPlants = inatData.results.filter(item => item.preferred_common_name && item.default_photo?.medium_url);
+          const candidateList = validPlants.length > 0 ? validPlants : inatData.results;
+          const chosenItem = candidateList[dateSeed % candidateList.length];
+
+          if (chosenItem) {
+            const care = getPlantCareDetails(chosenItem);
+            const plantObj = {
+              id: `inat_${chosenItem.id}`,
+              title: chosenItem.preferred_common_name
+                ? chosenItem.preferred_common_name.charAt(0).toUpperCase() + chosenItem.preferred_common_name.slice(1)
+                : chosenItem.name,
+              text: chosenItem.name || '',
+              category: getPlantCategory(chosenItem),
+              img: {
+                src: chosenItem.default_photo?.medium_url || 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=900&q=80',
+                alt: chosenItem.preferred_common_name || chosenItem.name || 'Plant of the Day'
+              },
+              watering: care.watering,
+              light: care.light,
+              soil: care.soil,
+              difficulty: care.difficulty,
+              toxicity: care.toxicity,
+              description: chosenItem.wikipedia_summary ? chosenItem.wikipedia_summary.replace(/<[^>]*>/g, '') : null,
+              wikipediaUrl: chosenItem.wikipedia_url || null
+            };
+
+            return sendJson(200, { plant: plantObj });
+          }
+        }
+        return sendJson(500, { error: 'No plant found from iNaturalist API.' });
+      } catch (err) {
+        return sendJson(500, { error: `API error: ${err.message}` });
+      }
+    }
+
     if (pathname === '/api/external-plants' && req.method === 'GET') {
       const page = Number(url.searchParams.get('page') || '1');
       const search = url.searchParams.get('search') || '';
