@@ -1,9 +1,9 @@
 import { Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
-import { NotificationProvider } from "./components/NotificationProvider";
 
 import First from "./components/First";
 import Second from "./components/Second";
@@ -25,36 +25,35 @@ export default function App() {
   const shouldHideHeader = hideHeaderRoutes.includes(location.pathname);
 
   return (
-    <NotificationProvider>
-      <>
-        <ScrollToTop />
-        {!shouldHideHeader && <Header />}
+    <>
+      <ScrollToTop />
+      {!shouldHideHeader && <Header />}
 
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <>
-                <First />
-                <Second />
-              </>
-            }
-          />
-          <Route path="/plants" element={<Plants />} />
-          <Route path="/plants/:id" element={<PlantDetail />} />
-          <Route path="/diseases" element={<Diseases />} />
-          <Route path="/diseases/:id" element={<DiseaseDetail />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/:id" element={<BlogDetail />} />
-          <Route path="/your-plants" element={<YourPlants />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+      <Routes>
+        <Route 
+          path="/" 
+          element={
+            <>
+              <First />
+              <Second />
+            </>
+          } 
+        />
+        <Route path="/plants" element={<Plants />} />
+        <Route path="/plants/:id" element={<PlantDetail />} />
+        <Route path="/diseases" element={<Diseases />} />
+        <Route path="/diseases/:id" element={<DiseaseDetail />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:id" element={<BlogDetail />} />
+        <Route path="/your-plants" element={<YourPlants />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
 
-        {!shouldHideHeader && <Footer />}
-        {!shouldHideHeader && <AIChatModal />}
-      </>
-    </NotificationProvider>
+      {!shouldHideHeader && <Footer />}
+      {!shouldHideHeader && <AIChatModal />}
+    </>
   );
 }
+ 
