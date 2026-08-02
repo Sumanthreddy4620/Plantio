@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import plantLogo from "../assets/plant.svg";
+import NotificationBell from "./NotificationBell";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -17,7 +18,7 @@ export default function Header() {
   useEffect(() => {
     const checkUser = () => {
       try {
-        const storedUser = localStorage.getItem("plantio_user") || sessionStorage.getItem("plantio_user");
+        const storedUser = localStorage.getItem("plantio_user");
         if (storedUser) {
           setUser(JSON.parse(storedUser));
         } else {
@@ -58,6 +59,8 @@ export default function Header() {
         <NavLink to="/diseases" onClick={closeMenu}>Plant Problems</NavLink>
         <NavLink to="/blog" onClick={closeMenu}>Blog</NavLink>
         <NavLink to="/your-plants" onClick={closeMenu}>Your Plants</NavLink>
+
+        <NotificationBell />
 
         {user ? (
           <div className="nav-user-container">

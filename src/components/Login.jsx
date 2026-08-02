@@ -76,8 +76,6 @@ export default function Login() {
 
       localStorage.setItem("plantio_token", token);
       localStorage.setItem("plantio_user", JSON.stringify(userObj));
-      sessionStorage.setItem("plantio_token", token);
-      sessionStorage.setItem("plantio_user", JSON.stringify(userObj));
 
       window.dispatchEvent(new Event("storage"));
 

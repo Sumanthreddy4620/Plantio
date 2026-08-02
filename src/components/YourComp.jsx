@@ -8,10 +8,10 @@ export default function YourComp() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [token, setToken] = useState(() => localStorage.getItem("plantio_token") || sessionStorage.getItem("plantio_token"));
+  const [token, setToken] = useState(() => localStorage.getItem("plantio_token"));
   const [user, setUser] = useState(() => {
     try {
-      const u = localStorage.getItem("plantio_user") || sessionStorage.getItem("plantio_user");
+      const u = localStorage.getItem("plantio_user");
       return u ? JSON.parse(u) : null;
     } catch {
       return null;
@@ -28,8 +28,8 @@ export default function YourComp() {
 
   useEffect(() => {
     const syncAuth = () => {
-      const t = localStorage.getItem("plantio_token") || sessionStorage.getItem("plantio_token");
-      const u = localStorage.getItem("plantio_user") || sessionStorage.getItem("plantio_user");
+      const t = localStorage.getItem("plantio_token");
+      const u = localStorage.getItem("plantio_user");
       setToken(t);
       setUser(u ? JSON.parse(u) : null);
     };
